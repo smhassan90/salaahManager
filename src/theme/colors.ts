@@ -1,0 +1,21 @@
+export const colors = {
+  primary: '#007F5F',
+  secondary: '#FFD700',
+  accent: '#F4B400', // Golden accent color
+  background: '#FFFFFF',
+  backgroundLight: '#F5F5F5',
+  textDark: '#222222',
+  textLight: '#888888',
+  textWhite: '#FFFFFF',
+  grayLight: '#F5F5F5',
+  grayMedium: '#CCCCCC',
+  grayDark: '#666666',
+  success: '#28A745',
+  error: '#DC3545',
+  warning: '#FFC107',
+  info: '#17A2B8',
+  border: '#E0E0E0',
+  transparent: 'transparent',
+  shadow: '#000000',
+};
+

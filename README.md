@@ -1,97 +1,304 @@
-This is a new [**React Native**](https://reactnative.dev) project, bootstrapped using [`@react-native-community/cli`](https://github.com/react-native-community/cli).
+# SalaahManager - Imam Prayer Management App
 
-# Getting Started
+A comprehensive React Native application designed for imams to manage their mosques efficiently. Built with TypeScript, React Navigation, and a custom design system.
 
-> **Note**: Make sure you have completed the [Set Up Your Environment](https://reactnative.dev/docs/set-up-your-environment) guide before proceeding.
+## 🌟 Features
 
-## Step 1: Start Metro
+### Authentication
+- Secure login system for imams
+- Demo credentials provided for testing
+- Automatic session management
 
-First, you will need to run **Metro**, the JavaScript build tool for React Native.
+### Prayer Time Management
+- View and edit prayer times for all 5 daily prayers (Fajr, Dhuhr, Asr, Maghrib, Isha)
+- Real-time updates across the app
+- Separate prayer times for each masjid
 
-To start the Metro dev server, run the following command from the root of your React Native project:
+### Multi-Masjid Management
+- Manage multiple mosques from a single account
+- Set default masjid for quick access
+- View masjid details and locations
 
-```sh
-# Using npm
-npm start
+### Question & Answer System
+- View questions from community members
+- Track question status (New/Replied)
+- Respond to inquiries directly
 
-# OR using Yarn
-yarn start
+### Notification System
+- Send notifications to masjid members
+- Multiple categories (Namaz Timing, Donation, Events)
+- Custom title and message support
+
+### Event Management
+- Add and manage masjid events
+- Include event date, time, and description
+- Keep community informed about upcoming activities
+
+### User Profile
+- View personal information
+- Access settings and preferences
+- Quick logout functionality
+
+## 📱 Screenshots
+
+The app includes:
+- **Splash Screen**: Beautiful loading screen with branding
+- **Login Screen**: Clean authentication interface
+- **Home Screen**: Prayer times overview with edit functionality
+- **Questions Screen**: Community Q&A management
+- **My Masajids Screen**: Masjid list with default selection
+- **Masjid Detail Screen**: Comprehensive masjid management
+- **Send Notification Screen**: Notification composer
+- **Add Event Screen**: Event creation form
+- **Profile Screen**: User information and settings
+
+## 🛠️ Technology Stack
+
+### Core Technologies
+- **React Native**: 0.82.1
+- **React**: 19.1.1
+- **TypeScript**: 5.8.3
+
+### Navigation
+- **@react-navigation/native**: 6.1.6
+- **@react-navigation/bottom-tabs**: 6.5.7
+- **@react-navigation/stack**: 6.3.16
+- **react-native-gesture-handler**: Latest
+- **react-native-screens**: Latest
+
+### UI Components
+- **react-native-safe-area-context**: 5.5.2
+- **@react-native-picker/picker**: Latest
+
+## 📂 Project Structure
+
+```
+salaahManager/
+├── src/
+│   ├── components/          # Reusable UI components
+│   │   ├── AppText.tsx
+│   │   ├── AppButton.tsx
+│   │   ├── AppCard.tsx
+│   │   ├── AppHeader.tsx
+│   │   ├── AppTextInput.tsx
+│   │   └── index.ts
+│   ├── context/            # State management
+│   │   ├── AppContext.tsx
+│   │   └── index.ts
+│   ├── navigation/         # Navigation setup
+│   │   ├── AppNavigator.tsx
+│   │   ├── BottomTabNavigator.tsx
+│   │   ├── types.ts
+│   │   └── index.ts
+│   ├── screens/           # App screens
+│   │   ├── SplashScreen.tsx
+│   │   ├── LoginScreen.tsx
+│   │   ├── HomeScreen.tsx
+│   │   ├── QuestionsScreen.tsx
+│   │   ├── MyMasajidsScreen.tsx
+│   │   ├── MasjidDetailScreen.tsx
+│   │   ├── SendNotificationScreen.tsx
+│   │   ├── AddEventScreen.tsx
+│   │   ├── ProfileScreen.tsx
+│   │   └── index.ts
+│   ├── theme/             # Design system
+│   │   ├── colors.ts
+│   │   ├── typography.ts
+│   │   ├── spacing.ts
+│   │   ├── theme.ts
+│   │   └── index.ts
+│   └── types/             # TypeScript types
+│       └── index.ts
+├── android/               # Android native code
+├── ios/                   # iOS native code
+├── App.tsx               # Root component
+├── index.js              # Entry point
+└── package.json          # Dependencies
+
 ```
 
-## Step 2: Build and run your app
+## 🎨 Design System
 
-With Metro running, open a new terminal window/pane from the root of your React Native project, and use one of the following commands to build and run your Android or iOS app:
+### Colors
+- **Primary**: #007F5F (Islamic Green)
+- **Secondary**: #FFD700 (Gold)
+- **Background**: #FFFFFF (White)
+- **Text Dark**: #222222
+- **Text Light**: #888888
 
-### Android
+### Typography
+- **Font Family**: Poppins (Regular, Medium, SemiBold, Bold)
+- **Font Sizes**: xs (12), sm (14), md (16), lg (18), xl (20), xxl (24), xxxl (28), huge (32)
 
-```sh
-# Using npm
+### Spacing
+- **xs**: 4px
+- **sm**: 8px
+- **md**: 16px
+- **lg**: 24px
+- **xl**: 32px
+- **xxl**: 40px
+- **xxxl**: 48px
+
+### Components
+All components follow a consistent design language:
+- **AppText**: Customizable text with variant, size, color, and alignment props
+- **AppButton**: Flexible button with primary, outline, and secondary variants
+- **AppCard**: Elevated card with configurable padding and shadow
+- **AppHeader**: Consistent header with navigation and title
+- **AppTextInput**: Form input with label, error handling, and focus states
+
+## 🚀 Getting Started
+
+### Prerequisites
+- Node.js >= 20
+- React Native development environment set up
+- Android Studio (for Android) or Xcode (for iOS)
+
+### Installation
+
+1. **Clone the repository**
+   ```bash
+   cd salaahManager
+   ```
+
+2. **Install dependencies**
+   ```bash
+   npm install
+   ```
+
+3. **Install iOS dependencies** (macOS only)
+   ```bash
+   cd ios && pod install && cd ..
+   ```
+
+### Running the App
+
+#### Android
+```bash
 npm run android
-
-# OR using Yarn
-yarn android
 ```
 
-### iOS
-
-For iOS, remember to install CocoaPods dependencies (this only needs to be run on first clone or after updating native deps).
-
-The first time you create a new project, run the Ruby bundler to install CocoaPods itself:
-
-```sh
-bundle install
-```
-
-Then, and every time you update your native dependencies, run:
-
-```sh
-bundle exec pod install
-```
-
-For more information, please visit [CocoaPods Getting Started guide](https://guides.cocoapods.org/using/getting-started.html).
-
-```sh
-# Using npm
+#### iOS
+```bash
 npm run ios
-
-# OR using Yarn
-yarn ios
 ```
 
-If everything is set up correctly, you should see your new app running in the Android Emulator, iOS Simulator, or your connected device.
+#### Start Metro Bundler (if needed)
+```bash
+npm start
+```
 
-This is one way to run your app — you can also build it directly from Android Studio or Xcode.
+#### Reset Cache
+```bash
+npm start -- --reset-cache
+```
 
-## Step 3: Modify your app
+## 🔐 Demo Credentials
 
-Now that you have successfully run the app, let's make changes!
+Use these credentials to login to the app:
 
-Open `App.tsx` in your text editor of choice and make some changes. When you save, your app will automatically update and reflect these changes — this is powered by [Fast Refresh](https://reactnative.dev/docs/fast-refresh).
+- **Email**: `imam@salaahmanager.com`
+- **Password**: `admin123`
 
-When you want to forcefully reload, for example to reset the state of your app, you can perform a full reload:
+## 📊 Mock Data
 
-- **Android**: Press the <kbd>R</kbd> key twice or select **"Reload"** from the **Dev Menu**, accessed via <kbd>Ctrl</kbd> + <kbd>M</kbd> (Windows/Linux) or <kbd>Cmd ⌘</kbd> + <kbd>M</kbd> (macOS).
-- **iOS**: Press <kbd>R</kbd> in iOS Simulator.
+The app comes with pre-populated mock data:
 
-## Congratulations! :tada:
+### Masajids
+1. **Masjid Al-Noor** - 123 Main St (Default)
+2. **Central Mosque** - 456 Oak Ave
+3. **Community Masjid** - 789 Elm Rd
 
-You've successfully run and modified your React Native App. :partying_face:
+### Prayer Times
+Each masjid has prayer times for all 5 daily prayers
 
-### Now what?
+### Questions
+Sample questions from community members with different statuses
 
-- If you want to add this new React Native code to an existing application, check out the [Integration guide](https://reactnative.dev/docs/integration-with-existing-apps).
-- If you're curious to learn more about React Native, check out the [docs](https://reactnative.dev/docs/getting-started).
+## 🏗️ Architecture
 
-# Troubleshooting
+### State Management
+- **Context API** for global state management
+- Centralized AppContext managing:
+  - Authentication state
+  - User information
+  - Masajid data
+  - Prayer times
+  - Questions
 
-If you're having issues getting the above steps to work, see the [Troubleshooting](https://reactnative.dev/docs/troubleshooting) page.
+### Navigation
+- **Stack Navigator** for main app flow
+- **Bottom Tab Navigator** for main screens
+- Type-safe navigation with TypeScript
 
-# Learn More
+### Component Structure
+- Reusable, typed components
+- Consistent prop interfaces
+- Theme-based styling
+- Separation of concerns
 
-To learn more about React Native, take a look at the following resources:
+## 📱 App Flow
 
-- [React Native Website](https://reactnative.dev) - learn more about React Native.
-- [Getting Started](https://reactnative.dev/docs/environment-setup) - an **overview** of React Native and how setup your environment.
-- [Learn the Basics](https://reactnative.dev/docs/getting-started) - a **guided tour** of the React Native **basics**.
-- [Blog](https://reactnative.dev/blog) - read the latest official React Native **Blog** posts.
-- [`@facebook/react-native`](https://github.com/facebook/react-native) - the Open Source; GitHub **repository** for React Native.
+1. **Splash Screen** (2 seconds)
+   - Check authentication status
+   - Navigate to Login or Main app
+
+2. **Login** (if not authenticated)
+   - Enter credentials
+   - Validate and navigate to Home
+
+3. **Main App** (Bottom Tabs)
+   - **Home**: Prayer times and quick actions
+   - **Questions**: Community Q&A
+   - **My Masajids**: Masjid management
+   - **Profile**: User settings
+
+4. **Detail Screens** (Stack Navigation)
+   - Masjid Detail
+   - Send Notification
+   - Add Event
+
+## 🔄 Future Enhancements
+
+Potential features for future versions:
+- Backend integration with API
+- Push notifications
+- Real-time prayer time calculations
+- User registration
+- Advanced analytics
+- Multi-language support
+- Dark mode
+- Offline support
+- Event calendar view
+- File attachments for questions
+
+## 🧪 Testing
+
+Run tests:
+```bash
+npm test
+```
+
+## 📄 License
+
+This project is licensed under the MIT License.
+
+## 👨‍💻 Developer
+
+Built with ❤️ for the Muslim community
+
+---
+
+## 📞 Support
+
+For issues, questions, or contributions, please open an issue on the repository.
+
+## 🙏 Acknowledgments
+
+- React Native community
+- React Navigation team
+- All contributors and testers
+
+---
+
+**Note**: This is a demonstration app with mock data. For production use, integrate with a proper backend API and database.

@@ -1,45 +1,69 @@
 /**
- * Sample React Native App
- * https://github.com/facebook/react-native
- *
+ * SalaahManager - Imam Prayer Management App
+ * 
  * @format
  */
 
-import { NewAppScreen } from '@react-native/new-app-screen';
-import { StatusBar, StyleSheet, useColorScheme, View } from 'react-native';
-import {
-  SafeAreaProvider,
-  useSafeAreaInsets,
-} from 'react-native-safe-area-context';
+import React, {useState} from 'react';
+import {StatusBar} from 'react-native';
+import {NavigationContainer} from '@react-navigation/native';
+import {SafeAreaProvider} from 'react-native-safe-area-context';
+import {AppProvider, useApp} from './src/context';
+import {SplashScreen, LoginScreen} from './src/screens';
+import {BottomTabNavigator} from './src/navigation/BottomTabNavigator';
+
+type Screen = 'splash' | 'login' | 'home';
+
+function AppContent() {
+  const [currentScreen, setCurrentScreen] = useState<Screen>('splash');
+  const {isLoggedIn, logout} = useApp();
+
+  const handleSplashFinish = () => {
+    if (isLoggedIn) {
+      setCurrentScreen('home');
+    } else {
+      setCurrentScreen('login');
+    }
+  };
+
+  const handleLoginSuccess = () => {
+    setCurrentScreen('home');
+  };
+
+  const handleLogout = () => {
+    logout();
+    setCurrentScreen('login');
+  };
+
+  if (currentScreen === 'splash') {
+    return <SplashScreen onFinish={handleSplashFinish} />;
+  }
+
+  if (currentScreen === 'login') {
+    return <LoginScreen onLoginSuccess={handleLoginSuccess} />;
+  }
+
+  // Home screen with bottom tabs
+  return (
+    <NavigationContainer>
+      <BottomTabNavigator onLogout={handleLogout} />
+    </NavigationContainer>
+  );
+}
 
 function App() {
-  const isDarkMode = useColorScheme() === 'dark';
-
   return (
     <SafeAreaProvider>
-      <StatusBar barStyle={isDarkMode ? 'light-content' : 'dark-content'} />
-      <AppContent />
+      <AppProvider>
+        <StatusBar 
+          barStyle="light-content" 
+          backgroundColor="transparent" 
+          translucent={true}
+        />
+        <AppContent />
+      </AppProvider>
     </SafeAreaProvider>
   );
 }
-
-function AppContent() {
-  const safeAreaInsets = useSafeAreaInsets();
-
-  return (
-    <View style={styles.container}>
-      <NewAppScreen
-        templateFileName="App.tsx"
-        safeAreaInsets={safeAreaInsets}
-      />
-    </View>
-  );
-}
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-  },
-});
 
 export default App;
