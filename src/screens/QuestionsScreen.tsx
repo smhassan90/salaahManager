@@ -1,19 +1,23 @@
-import React, {useState} from 'react';
-import {View, StyleSheet, FlatList, TouchableOpacity, Modal} from 'react-native';
+import React, {useState, useCallback} from 'react';
+import {View, StyleSheet, FlatList, TouchableOpacity, Modal, RefreshControl} from 'react-native';
+import {useFocusEffect} from '@react-navigation/native';
 import {AppText, AppButton, AppCard, AppHeader, AppTextInput} from '../components';
 import {theme} from '../theme';
 import {useApp} from '../context';
 import {Question} from '../types';
+import {useTranslation} from '../i18n';
 
 type FilterTab = 'all' | 'pending' | 'answered';
 
 export const QuestionsScreen: React.FC = () => {
-  const {questions, defaultMasjid, replyToQuestion} = useApp();
+  const {t} = useTranslation();
+  const {questions, defaultMasjid, replyToQuestion, questionsPermissionError, fetchQuestions} = useApp();
   const [activeTab, setActiveTab] = useState<FilterTab>('all');
   const [replyModalVisible, setReplyModalVisible] = useState(false);
   const [selectedQuestion, setSelectedQuestion] = useState<Question | null>(null);
   const [replyText, setReplyText] = useState('');
   const [sendReplyButtonPressed, setSendReplyButtonPressed] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
 
   // Filter questions based on active tab
   const filteredQuestions = questions.filter(question => {
@@ -36,14 +40,38 @@ export const QuestionsScreen: React.FC = () => {
     setReplyModalVisible(true);
   };
 
-  const handleSendReply = () => {
+  const handleSendReply = async () => {
     if (selectedQuestion && replyText.trim()) {
-      replyToQuestion(selectedQuestion.id, replyText.trim());
+      await replyToQuestion(selectedQuestion.id, replyText.trim());
       setReplyModalVisible(false);
       setSelectedQuestion(null);
       setReplyText('');
     }
   };
+
+  const handleRefresh = async () => {
+    if (!defaultMasjid?.id) {
+      return;
+    }
+    
+    setRefreshing(true);
+    try {
+      await fetchQuestions(defaultMasjid.id);
+    } catch (error) {
+      // Error refreshing questions - already handled by AppContext
+    } finally {
+      setRefreshing(false);
+    }
+  };
+
+  // Refresh questions when screen is focused
+  useFocusEffect(
+    useCallback(() => {
+      if (defaultMasjid?.id) {
+        fetchQuestions(defaultMasjid.id);
+      }
+    }, [defaultMasjid?.id, fetchQuestions])
+  );
 
   const renderQuestion = ({item}: {item: Question}) => (
     <AppCard padding="medium" shadow="small" style={styles.questionCard}>
@@ -63,13 +91,13 @@ export const QuestionsScreen: React.FC = () => {
               size="xs"
               color={theme.colors.textWhite}
               variant="semiBold">
-              {item.status === 'new' ? 'New' : 'Replied'}
+              {item.status === 'new' ? t('questions.new') : t('questions.replied')}
             </AppText>
           </View>
         </View>
         {item.status === 'new' && (
           <AppButton
-            title="Reply"
+            title={t('questions.reply')}
             onPress={() => handleReplyPress(item)}
             variant="outline"
             size="small"
@@ -82,7 +110,7 @@ export const QuestionsScreen: React.FC = () => {
       </AppText>
       <View style={styles.questionFooter}>
         <AppText size="xs" color={theme.colors.textLight}>
-          By {item.userName}
+          {t('common.by')} {item.userName}
         </AppText>
         <AppText size="xs" color={theme.colors.textLight}>
           {item.date}
@@ -94,7 +122,7 @@ export const QuestionsScreen: React.FC = () => {
             size="xs"
             color={theme.colors.primary}
             variant="semiBold">
-            Your Reply:
+            {t('questions.yourReply')}:
           </AppText>
           <AppText size="sm" color={theme.colors.textDark}>
             {item.reply}
@@ -107,7 +135,7 @@ export const QuestionsScreen: React.FC = () => {
   return (
     <View style={styles.container}>
       <AppHeader
-        title="QUESTIONS"
+        title={t('questions.title')}
         subtitle={defaultMasjid?.name}
       />
 
@@ -121,7 +149,7 @@ export const QuestionsScreen: React.FC = () => {
             variant={activeTab === 'all' ? 'semiBold' : 'regular'}
             size="sm"
             color={activeTab === 'all' ? theme.colors.primary : theme.colors.textDark}>
-            All
+            {t('questions.all')}
           </AppText>
           <View style={[styles.badge, activeTab === 'all' && styles.badgeActive]}>
             <AppText
@@ -141,7 +169,7 @@ export const QuestionsScreen: React.FC = () => {
             variant={activeTab === 'pending' ? 'semiBold' : 'regular'}
             size="sm"
             color={activeTab === 'pending' ? theme.colors.primary : theme.colors.textDark}>
-            Pending
+            {t('questions.pending')}
           </AppText>
           <View style={[styles.badge, activeTab === 'pending' && styles.badgeActive]}>
             <AppText
@@ -161,7 +189,7 @@ export const QuestionsScreen: React.FC = () => {
             variant={activeTab === 'answered' ? 'semiBold' : 'regular'}
             size="sm"
             color={activeTab === 'answered' ? theme.colors.primary : theme.colors.textDark}>
-            Answered
+            {t('questions.answered')}
           </AppText>
           <View style={[styles.badge, activeTab === 'answered' && styles.badgeActive]}>
             <AppText
@@ -179,13 +207,41 @@ export const QuestionsScreen: React.FC = () => {
         renderItem={renderQuestion}
         keyExtractor={item => item.id}
         contentContainerStyle={styles.listContent}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={handleRefresh}
+            colors={[theme.colors.primary]}
+            tintColor={theme.colors.primary}
+          />
+        }
         ListEmptyComponent={
           <View style={styles.emptyContainer}>
-            <AppText size="md" color={theme.colors.textLight} align="center">
-              {activeTab === 'pending' && 'No pending questions'}
-              {activeTab === 'answered' && 'No answered questions yet'}
-              {activeTab === 'all' && 'No questions yet'}
-            </AppText>
+            {questionsPermissionError ? (
+              <View style={styles.permissionErrorContainer}>
+                <AppText 
+                  size="md" 
+                  color={theme.colors.error || theme.colors.warning} 
+                  align="center"
+                  variant="semiBold"
+                  style={styles.permissionErrorText}>
+                  {t('questions.permissionError')}
+                </AppText>
+                <AppText 
+                  size="sm" 
+                  color={theme.colors.textLight} 
+                  align="center"
+                  style={styles.permissionErrorSubtext}>
+                  {t('questions.permissionErrorSubtext')}
+                </AppText>
+              </View>
+            ) : (
+              <AppText size="md" color={theme.colors.textLight} align="center">
+                {activeTab === 'pending' && t('questions.noPendingQuestions')}
+                {activeTab === 'answered' && t('questions.noAnsweredQuestions')}
+                {activeTab === 'all' && t('questions.noQuestions')}
+              </AppText>
+            )}
           </View>
         }
       />
@@ -199,7 +255,7 @@ export const QuestionsScreen: React.FC = () => {
         <View style={styles.modalOverlay}>
           <View style={styles.modalContent}>
             <AppText variant="semiBold" size="lg" style={styles.modalTitle}>
-              Reply to Question
+              {t('questions.replyToQuestion')}
             </AppText>
 
             {selectedQuestion && (
@@ -208,7 +264,7 @@ export const QuestionsScreen: React.FC = () => {
                   {selectedQuestion.title}
                 </AppText>
                 <AppText size="xs" color={theme.colors.textLight}>
-                  By {selectedQuestion.userName}
+                  {t('common.by')} {selectedQuestion.userName}
                 </AppText>
                 <AppText size="sm" style={styles.questionPreviewText}>
                   {selectedQuestion.question}
@@ -217,8 +273,8 @@ export const QuestionsScreen: React.FC = () => {
             )}
 
             <AppTextInput
-              label="Your Reply"
-              placeholder="Type your reply here..."
+              label={t('questions.yourReply')}
+              placeholder={t('questions.yourReplyPlaceholder')}
               value={replyText}
               onChangeText={setReplyText}
               multiline
@@ -226,7 +282,7 @@ export const QuestionsScreen: React.FC = () => {
 
             <View style={styles.modalButtons}>
               <AppButton
-                title="CANCEL"
+                title={t('common.cancel')}
                 onPress={() => setReplyModalVisible(false)}
                 variant="outline"
                 size="small"
@@ -244,7 +300,7 @@ export const QuestionsScreen: React.FC = () => {
                   !replyText.trim() && styles.sendReplyButtonDisabled
                 ]}>
                 <AppText variant="semiBold" size="sm" color={theme.colors.textWhite}>
-                  SEND REPLY
+                  {t('questions.sendReply')}
                 </AppText>
               </TouchableOpacity>
             </View>
@@ -345,6 +401,17 @@ const styles = StyleSheet.create({
   emptyContainer: {
     padding: theme.spacing.xl,
     alignItems: 'center',
+  },
+  permissionErrorContainer: {
+    alignItems: 'center',
+    paddingHorizontal: theme.spacing.lg,
+  },
+  permissionErrorText: {
+    marginBottom: theme.spacing.sm,
+  },
+  permissionErrorSubtext: {
+    marginTop: theme.spacing.xs,
+    lineHeight: 20,
   },
   modalOverlay: {
     flex: 1,

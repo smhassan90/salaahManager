@@ -7,6 +7,10 @@ export * from './MyMasajidsScreen';
 export * from './ProfileScreen';
 export * from './NotificationsScreen';
 export * from './EventsScreen';
+export * from './ChangePasswordScreen';
+export * from './NotificationSettingsScreen';
+export * from './LanguageSettingsScreen';
+export * from './AboutScreen';
 
 // Commented out until needed:
 // export * from './MasjidDetailScreen';

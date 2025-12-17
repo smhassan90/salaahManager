@@ -7,8 +7,8 @@ import {AppText} from './AppText';
 interface AppHeaderProps {
   title: string;
   subtitle?: string;
-  leftIcon?: string;
-  rightIcon?: string;
+  leftIcon?: string | React.ReactNode;
+  rightIcon?: string | React.ReactNode;
   onLeftPress?: () => void;
   onRightPress?: () => void;
   showBackButton?: boolean;
@@ -37,9 +37,13 @@ export const AppHeader: React.FC<AppHeaderProps> = ({
         <View style={styles.leftSection}>
           {(showBackButton || leftIcon || onLeftPress) && (
             <TouchableOpacity onPress={onLeftPress} style={styles.iconButton}>
-              <AppText size="lg" color={theme.colors.textWhite}>
-                {showBackButton ? '←' : leftIcon || ''}
-              </AppText>
+              {typeof leftIcon === 'string' || !leftIcon ? (
+                <AppText size="lg" color={theme.colors.textWhite}>
+                  {showBackButton ? '←' : leftIcon || ''}
+                </AppText>
+              ) : (
+                leftIcon
+              )}
             </TouchableOpacity>
           )}
         </View>
@@ -66,9 +70,13 @@ export const AppHeader: React.FC<AppHeaderProps> = ({
         <View style={styles.rightSection}>
           {(showMenuButton || rightIcon || onRightPress) && (
             <TouchableOpacity onPress={onRightPress} style={styles.iconButton}>
-              <AppText size="lg" color={theme.colors.textWhite}>
-                {showMenuButton ? '☰' : rightIcon || ''}
-              </AppText>
+              {typeof rightIcon === 'string' || !rightIcon ? (
+                <AppText size="lg" color={theme.colors.textWhite}>
+                  {showMenuButton ? '☰' : rightIcon || ''}
+                </AppText>
+              ) : (
+                rightIcon
+              )}
             </TouchableOpacity>
           )}
         </View>

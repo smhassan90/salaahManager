@@ -2,9 +2,10 @@ import React from 'react';
 import {View} from 'react-native';
 import {createBottomTabNavigator} from '@react-navigation/bottom-tabs';
 import Icon from 'react-native-vector-icons/Ionicons';
-import {QuestionsScreen, MyMasajidsScreen, ProfileScreen} from '../screens';
+import {QuestionsScreen, MyMasajidsScreen, ProfileScreen, NotificationsScreen} from '../screens';
 import {HomeStackNavigator} from './HomeStackNavigator';
 import {theme} from '../theme';
+import {useTranslation} from '../i18n';
 
 const Tab = createBottomTabNavigator();
 
@@ -13,6 +14,8 @@ interface BottomTabNavigatorProps {
 }
 
 export const BottomTabNavigator: React.FC<BottomTabNavigatorProps> = ({onLogout}) => {
+  const {t} = useTranslation();
+  
   return (
     <Tab.Navigator
       screenOptions={{
@@ -47,7 +50,7 @@ export const BottomTabNavigator: React.FC<BottomTabNavigatorProps> = ({onLogout}
       <Tab.Screen
         name="Home"
         options={{
-          tabBarLabel: 'Home',
+          tabBarLabel: t('tabs.home'),
           tabBarIcon: ({color, focused}) => (
             <View>
               {focused && (
@@ -73,7 +76,7 @@ export const BottomTabNavigator: React.FC<BottomTabNavigatorProps> = ({onLogout}
         name="Questions"
         component={QuestionsScreen}
         options={{
-          tabBarLabel: 'Questions',
+          tabBarLabel: t('tabs.questions'),
           tabBarIcon: ({color, focused}) => (
             <View>
               {focused && (
@@ -98,7 +101,7 @@ export const BottomTabNavigator: React.FC<BottomTabNavigatorProps> = ({onLogout}
         name="MyMasajids"
         component={MyMasajidsScreen}
         options={{
-          tabBarLabel: 'My Masajids',
+          tabBarLabel: t('tabs.myMasajids'),
           tabBarIcon: ({color, focused}) => (
             <View>
               {focused && (
@@ -120,9 +123,34 @@ export const BottomTabNavigator: React.FC<BottomTabNavigatorProps> = ({onLogout}
         }}
       />
       <Tab.Screen
+        name="Notifications"
+        component={NotificationsScreen}
+        options={{
+          tabBarLabel: t('tabs.notifications'),
+          tabBarIcon: ({color, focused}) => (
+            <View>
+              {focused && (
+                <View
+                  style={{
+                    position: 'absolute',
+                    top: -8,
+                    left: 0,
+                    right: 0,
+                    height: 3,
+                    backgroundColor: theme.colors.primary,
+                    borderRadius: 2,
+                  }}
+                />
+              )}
+              <Icon name={focused ? 'notifications' : 'notifications-outline'} size={24} color={color} />
+            </View>
+          ),
+        }}
+      />
+      <Tab.Screen
         name="Profile"
         options={{
-          tabBarLabel: 'Profile',
+          tabBarLabel: t('tabs.profile'),
           tabBarIcon: ({color, focused}) => (
             <View>
               {focused && (

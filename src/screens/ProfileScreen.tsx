@@ -1,17 +1,20 @@
 import React, {useState} from 'react';
-import {View, StyleSheet, ScrollView, Modal, TouchableOpacity, Switch, Alert, Image} from 'react-native';
-import {launchImageLibrary, launchCamera, ImagePickerResponse} from 'react-native-image-picker';
+import {View, StyleSheet, ScrollView, Modal, TouchableOpacity, Alert, Linking, Switch, KeyboardAvoidingView, Platform} from 'react-native';
 import Icon from 'react-native-vector-icons/Ionicons';
 import {AppText, AppButton, AppCard, AppHeader, AppTextInput} from '../components';
 import {theme} from '../theme';
 import {useApp} from '../context';
+import {userService} from '../services/api';
+import {getErrorMessage} from '../services/api/apiClient';
+import {useTranslation, supportedLanguages} from '../i18n';
 
 interface ProfileScreenProps {
   onLogout: () => void;
 }
 
 export const ProfileScreen: React.FC<ProfileScreenProps> = ({onLogout}) => {
-  const {user} = useApp();
+  const {user, currentLanguage, changeLanguage} = useApp();
+  const {t} = useTranslation();
   const [logoutModalVisible, setLogoutModalVisible] = useState(false);
   const [deleteAccountModalVisible, setDeleteAccountModalVisible] = useState(false);
   const [logoutButtonPressed, setLogoutButtonPressed] = useState(false);
@@ -25,18 +28,14 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({onLogout}) => {
 
   // Notification Settings Modal
   const [notificationSettingsModalVisible, setNotificationSettingsModalVisible] = useState(false);
-  const [prayerTimesNotif, setPrayerTimesNotif] = useState(true);
-  const [eventsNotif, setEventsNotif] = useState(true);
-  const [donationsNotif, setDonationsNotif] = useState(true);
   const [generalNotif, setGeneralNotif] = useState(true);
   const [questionsNotif, setQuestionsNotif] = useState(true);
 
+  // Language Settings Modal
+  const [languageSettingsModalVisible, setLanguageSettingsModalVisible] = useState(false);
+
   // About Modal
   const [aboutModalVisible, setAboutModalVisible] = useState(false);
-
-  // Profile Image
-  const [profileImage, setProfileImage] = useState<string | null>(null);
-  const [imagePickerModalVisible, setImagePickerModalVisible] = useState(false);
 
   const handleLogoutPress = () => {
     setLogoutModalVisible(true);
@@ -51,142 +50,147 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({onLogout}) => {
     setDeleteAccountModalVisible(true);
   };
 
-  const handleConfirmDelete = () => {
-    // TODO: Implement account deletion
-    console.log('Account deletion requested');
-    setDeleteAccountModalVisible(false);
-    // For now, just logout
-    onLogout();
+  const handleConfirmDelete = async () => {
+    try {
+      await userService.deleteAccount();
+      setDeleteAccountModalVisible(false);
+      Alert.alert('Success', 'Account deleted successfully');
+      onLogout();
+    } catch (error) {
+      Alert.alert('Error', 'Failed to delete account. Please try again.');
+    }
   };
 
   const handleChangePasswordPress = () => {
     setChangePasswordModalVisible(true);
   };
 
-  const handleChangePassword = () => {
+  const handleChangePassword = async () => {
     if (!currentPassword.trim() || !newPassword.trim() || !confirmPassword.trim()) {
-      Alert.alert('Error', 'Please fill in all fields');
+      Alert.alert(t('common.error') || 'Error', t('profile.fillAllFields') || 'Please fill in all fields');
       return;
     }
     if (newPassword !== confirmPassword) {
-      Alert.alert('Error', 'New passwords do not match');
+      Alert.alert(t('common.error') || 'Error', t('profile.passwordsDoNotMatch') || 'New passwords do not match');
       return;
     }
     if (newPassword.length < 6) {
-      Alert.alert('Error', 'Password must be at least 6 characters');
+      Alert.alert(t('common.error') || 'Error', t('profile.passwordMinLength') || 'Password must be at least 6 characters');
       return;
     }
-    // TODO: Implement actual password change API call
-    Alert.alert('Success', 'Password changed successfully');
-    setChangePasswordModalVisible(false);
-    setCurrentPassword('');
-    setNewPassword('');
-    setConfirmPassword('');
+    try {
+      await userService.changePassword({
+        currentPassword,
+        newPassword,
+        confirmPassword,
+      });
+      Alert.alert(t('common.success') || 'Success', t('profile.passwordChangedSuccess') || 'Password changed successfully');
+      setChangePasswordModalVisible(false);
+      setCurrentPassword('');
+      setNewPassword('');
+      setConfirmPassword('');
+    } catch (error) {
+      Alert.alert(t('common.error') || 'Error', getErrorMessage(error));
+    }
   };
 
   const handleNotificationSettingsPress = () => {
     setNotificationSettingsModalVisible(true);
   };
 
-  const handleSaveNotificationSettings = () => {
-    // TODO: Save notification settings to backend
-    Alert.alert('Success', 'Notification settings saved');
-    setNotificationSettingsModalVisible(false);
+  const handleSaveNotificationSettings = async () => {
+    try {
+      await userService.updateUserSettings({
+        general_notifications: generalNotif,
+        questions_notifications: questionsNotif,
+      });
+      Alert.alert(t('common.success') || 'Success', t('profile.settingsSaved') || 'Notification settings saved');
+      setNotificationSettingsModalVisible(false);
+    } catch (error) {
+      Alert.alert(t('common.error') || 'Error', getErrorMessage(error));
+    }
+  };
+
+  const handleLanguageSettingsPress = () => {
+    setLanguageSettingsModalVisible(true);
+  };
+
+  const handleLanguageChange = async (languageCode: string) => {
+    if (languageCode === currentLanguage) {
+      setLanguageSettingsModalVisible(false);
+      return;
+    }
+    try {
+      await changeLanguage(languageCode);
+      setLanguageSettingsModalVisible(false);
+      Alert.alert(t('common.success') || 'Success', t('profile.languageChanged') || 'Language changed successfully');
+    } catch (error) {
+      Alert.alert(t('common.error') || 'Error', 'Failed to change language');
+    }
   };
 
   const handleAboutPress = () => {
     setAboutModalVisible(true);
   };
 
-  const handleImagePickerPress = () => {
-    setImagePickerModalVisible(true);
-  };
-
-  const handleSelectFromGallery = () => {
-    launchImageLibrary(
-      {
-        mediaType: 'photo',
-        quality: 0.8,
-        maxWidth: 800,
-        maxHeight: 800,
-      },
-      (response: ImagePickerResponse) => {
-        setImagePickerModalVisible(false);
-        if (response.didCancel) {
-          console.log('User cancelled image picker');
-        } else if (response.errorCode) {
-          Alert.alert('Error', response.errorMessage || 'Failed to pick image');
-        } else if (response.assets && response.assets[0]) {
-          setProfileImage(response.assets[0].uri || null);
-          Alert.alert('Success', 'Profile picture updated successfully');
-        }
+  const handlePrivacyPolicyPress = async () => {
+    const url = 'https://alasrbackend.vercel.app/alasrmanager/privacy-policy';
+    try {
+      const canOpen = await Linking.canOpenURL(url);
+      if (canOpen) {
+        await Linking.openURL(url);
+      } else {
+        // Try opening anyway, canOpenURL might return false for HTTPS on some devices
+        await Linking.openURL(url);
       }
-    );
-  };
-
-  const handleTakePhoto = () => {
-    launchCamera(
-      {
-        mediaType: 'photo',
-        quality: 0.8,
-        maxWidth: 800,
-        maxHeight: 800,
-        saveToPhotos: false,
-      },
-      (response: ImagePickerResponse) => {
-        setImagePickerModalVisible(false);
-        if (response.didCancel) {
-          console.log('User cancelled camera');
-        } else if (response.errorCode) {
-          Alert.alert('Error', response.errorMessage || 'Failed to take photo');
-        } else if (response.assets && response.assets[0]) {
-          setProfileImage(response.assets[0].uri || null);
-          Alert.alert('Success', 'Profile picture updated successfully');
-        }
+    } catch (error: any) {
+      // If canOpenURL fails, try opening directly
+      try {
+        await Linking.openURL(url);
+      } catch (openError) {
+        Alert.alert(
+          t('about.errorOpeningPrivacy'),
+          t('about.errorOpeningPrivacyMessage') || 'Please check your internet connection and try again.'
+        );
       }
-    );
+    }
   };
 
-  const handleRemovePhoto = () => {
-    Alert.alert(
-      'Remove Photo',
-      'Are you sure you want to remove your profile picture?',
-      [
-        {text: 'Cancel', style: 'cancel'},
-        {
-          text: 'Remove',
-          style: 'destructive',
-          onPress: () => {
-            setProfileImage(null);
-            setImagePickerModalVisible(false);
-          },
-        },
-      ]
-    );
+  const handleTermsOfServicePress = async () => {
+    const url = 'https://alasrbackend.vercel.app/alasr/terms-of-service';
+    try {
+      const canOpen = await Linking.canOpenURL(url);
+      if (canOpen) {
+        await Linking.openURL(url);
+      } else {
+        // Try opening anyway, canOpenURL might return false for HTTPS on some devices
+        await Linking.openURL(url);
+      }
+    } catch (error: any) {
+      // If canOpenURL fails, try opening directly
+      try {
+        await Linking.openURL(url);
+      } catch (openError) {
+        Alert.alert(
+          t('about.errorOpeningTerms'),
+          t('about.errorOpeningTermsMessage') || 'Please check your internet connection and try again.'
+        );
+      }
+    }
   };
 
   return (
     <View style={styles.container}>
-      <AppHeader title="PROFILE" />
+      <AppHeader title={t('profile.title')} />
 
       <ScrollView style={styles.scrollView} contentContainerStyle={styles.scrollContent}>
         <AppCard padding="large" shadow="medium" style={styles.profileCard}>
           <View style={styles.avatarContainer}>
             <View style={styles.avatar}>
-              {profileImage ? (
-                <Image source={{uri: profileImage}} style={styles.avatarImage} />
-              ) : (
-                <AppText variant="bold" size="huge" color={theme.colors.textWhite}>
-                  {user?.name.charAt(0)}
-                </AppText>
-              )}
+              <AppText variant="bold" size="huge" color={theme.colors.textWhite}>
+                {user?.name.charAt(0)}
+              </AppText>
             </View>
-            <TouchableOpacity
-              style={styles.cameraButton}
-              onPress={handleImagePickerPress}
-              activeOpacity={0.7}>
-              <Icon name="camera" size={20} color={theme.colors.textWhite} />
-            </TouchableOpacity>
           </View>
           <AppText
             variant="bold"
@@ -204,26 +208,33 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({onLogout}) => {
         </AppCard>
 
         <AppText variant="semiBold" size="sm" style={styles.sectionTitle}>
-          SETTINGS
+          {t('common.settings')}
         </AppText>
 
         <AppCard padding="medium" shadow="small" style={styles.settingsCard}>
           <AppButton
-            title="Change Password"
+            title={t('profile.changePassword')}
             onPress={handleChangePasswordPress}
             variant="outline"
             fullWidth
             style={styles.settingButton}
           />
           <AppButton
-            title="Notifications Settings"
+            title={t('profile.notificationSettings')}
             onPress={handleNotificationSettingsPress}
             variant="outline"
             fullWidth
             style={styles.settingButton}
           />
           <AppButton
-            title="About"
+            title={t('profile.languageSettings')}
+            onPress={handleLanguageSettingsPress}
+            variant="outline"
+            fullWidth
+            style={styles.settingButton}
+          />
+          <AppButton
+            title={t('common.about')}
             onPress={handleAboutPress}
             variant="outline"
             fullWidth
@@ -244,7 +255,7 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({onLogout}) => {
             variant="semiBold"
             color={theme.colors.error}
             style={styles.logoutButtonText}>
-            LOGOUT
+            {t('common.logout')}
           </AppText>
         </TouchableOpacity>
 
@@ -262,7 +273,7 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({onLogout}) => {
             variant="semiBold"
             color={theme.colors.error}
             style={styles.deleteButtonText}>
-            DELETE ACCOUNT
+            {t('profile.deleteAccount')}
           </AppText>
         </TouchableOpacity>
       </ScrollView>
@@ -274,30 +285,35 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({onLogout}) => {
         animationType="fade"
         onRequestClose={() => setLogoutModalVisible(false)}>
         <View style={styles.modalOverlay}>
-          <View style={styles.modalContent}>
-            <AppText variant="semiBold" size="lg" style={styles.modalTitle}>
-              Confirm Logout
+          <View style={styles.logoutModalContent}>
+            <View style={styles.logoutIconContainer}>
+              <Icon name="log-out-outline" size={48} color={theme.colors.error} />
+            </View>
+            
+            <AppText variant="semiBold" size="xl" style={styles.logoutModalTitle} align="center">
+              {t('profile.confirmLogout')}
             </AppText>
 
-            <AppText size="md" style={styles.logoutMessage}>
-              Are you sure you want to logout?
+            <AppText size="md" color={theme.colors.textLight} style={styles.logoutModalMessage} align="center">
+              {t('profile.logoutMessage')}
             </AppText>
 
-            <View style={styles.modalButtons}>
+            <View style={styles.logoutModalButtons}>
               <AppButton
-                title="CANCEL"
+                title={t('common.cancel')}
                 onPress={() => setLogoutModalVisible(false)}
                 variant="outline"
-                size="small"
-                style={styles.modalButton}
+                fullWidth
+                style={styles.logoutModalCancelButton}
               />
-              <AppButton
-                title="LOGOUT"
+              <TouchableOpacity
                 onPress={handleConfirmLogout}
-                variant="primary"
-                size="small"
-                style={styles.modalButton}
-              />
+                style={[styles.logoutModalConfirmButton, {backgroundColor: theme.colors.error}]}
+                activeOpacity={0.8}>
+                <AppText variant="semiBold" size="md" color={theme.colors.textWhite} align="center">
+                  {t('common.logout')}
+                </AppText>
+              </TouchableOpacity>
             </View>
           </View>
         </View>
@@ -310,30 +326,35 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({onLogout}) => {
         animationType="fade"
         onRequestClose={() => setDeleteAccountModalVisible(false)}>
         <View style={styles.modalOverlay}>
-          <View style={styles.modalContent}>
-            <AppText variant="semiBold" size="lg" style={styles.modalTitle}>
-              Delete Account
+          <View style={styles.deleteModalContent}>
+            <View style={styles.deleteIconContainer}>
+              <Icon name="warning-outline" size={48} color={theme.colors.error} />
+            </View>
+            
+            <AppText variant="semiBold" size="xl" style={styles.deleteModalTitle} align="center">
+              {t('profile.deleteAccountTitle')}
             </AppText>
 
-            <AppText size="md" style={styles.deleteMessage}>
-              Are you sure you want to delete your account? This action cannot be undone.
+            <AppText size="md" color={theme.colors.textLight} style={styles.deleteModalMessage} align="center">
+              {t('profile.deleteAccountMessage')}
             </AppText>
 
-            <View style={styles.modalButtons}>
+            <View style={styles.deleteModalButtons}>
               <AppButton
-                title="CANCEL"
+                title={t('common.cancel')}
                 onPress={() => setDeleteAccountModalVisible(false)}
                 variant="outline"
-                size="small"
-                style={styles.modalButton}
+                fullWidth
+                style={styles.deleteModalCancelButton}
               />
-            <AppButton
-              title="DELETE"
-              onPress={handleConfirmDelete}
-              variant="primary"
-              size="small"
-              style={styles.deleteModalButton}
-            />
+              <TouchableOpacity
+                onPress={handleConfirmDelete}
+                style={[styles.deleteModalConfirmButton, {backgroundColor: theme.colors.error}]}
+                activeOpacity={0.8}>
+                <AppText variant="semiBold" size="md" color={theme.colors.textWhite} align="center">
+                  {t('common.delete')}
+                </AppText>
+              </TouchableOpacity>
             </View>
           </View>
         </View>
@@ -346,61 +367,75 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({onLogout}) => {
         animationType="fade"
         onRequestClose={() => setChangePasswordModalVisible(false)}>
         <View style={styles.modalOverlay}>
-          <ScrollView 
-            contentContainerStyle={styles.modalScrollContent}
-            keyboardShouldPersistTaps="handled">
-            <View style={styles.modalContent}>
-              <AppText variant="semiBold" size="lg" style={styles.modalTitle}>
-                Change Password
-              </AppText>
+          <KeyboardAvoidingView 
+            behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+            style={styles.changePasswordModalContainer}>
+            <ScrollView 
+              contentContainerStyle={styles.changePasswordModalScrollContent}
+              keyboardShouldPersistTaps="handled"
+              showsVerticalScrollIndicator={false}>
+              <View style={styles.changePasswordModalContent}>
+                <View style={styles.changePasswordIconContainer}>
+                  <Icon name="lock-closed-outline" size={48} color={theme.colors.primary} />
+                </View>
+                
+                <AppText variant="semiBold" size="xl" style={styles.changePasswordModalTitle} align="center">
+                  {t('profile.changePassword')}
+                </AppText>
 
-              <AppTextInput
-                label="Current Password"
-                placeholder="Enter current password..."
-                value={currentPassword}
-                onChangeText={setCurrentPassword}
-                secureTextEntry
-              />
+                <View style={styles.changePasswordFormContainer}>
+                  <AppTextInput
+                    label={t('profile.currentPassword')}
+                    placeholder={t('profile.enterCurrentPassword')}
+                    value={currentPassword}
+                    onChangeText={setCurrentPassword}
+                    secureTextEntry
+                    style={styles.changePasswordInput}
+                  />
 
-              <AppTextInput
-                label="New Password"
-                placeholder="Enter new password..."
-                value={newPassword}
-                onChangeText={setNewPassword}
-                secureTextEntry
-              />
+                  <AppTextInput
+                    label={t('profile.newPassword')}
+                    placeholder={t('profile.enterNewPassword')}
+                    value={newPassword}
+                    onChangeText={setNewPassword}
+                    secureTextEntry
+                    style={styles.changePasswordInput}
+                  />
 
-              <AppTextInput
-                label="Confirm New Password"
-                placeholder="Confirm new password..."
-                value={confirmPassword}
-                onChangeText={setConfirmPassword}
-                secureTextEntry
-              />
+                  <AppTextInput
+                    label={t('profile.confirmNewPassword')}
+                    placeholder={t('profile.confirmNewPasswordPlaceholder')}
+                    value={confirmPassword}
+                    onChangeText={setConfirmPassword}
+                    secureTextEntry
+                    style={styles.changePasswordInput}
+                  />
+                </View>
 
-              <View style={styles.modalButtons}>
-                <AppButton
-                  title="CANCEL"
-                  onPress={() => {
-                    setChangePasswordModalVisible(false);
-                    setCurrentPassword('');
-                    setNewPassword('');
-                    setConfirmPassword('');
-                  }}
-                  variant="outline"
-                  size="small"
-                  style={styles.modalButton}
-                />
-                <AppButton
-                  title="SAVE"
-                  onPress={handleChangePassword}
-                  variant="primary"
-                  size="small"
-                  style={styles.modalButton}
-                />
+                <View style={styles.changePasswordModalButtons}>
+                  <AppButton
+                    title={t('common.cancel')}
+                    onPress={() => {
+                      setChangePasswordModalVisible(false);
+                      setCurrentPassword('');
+                      setNewPassword('');
+                      setConfirmPassword('');
+                    }}
+                    variant="outline"
+                    fullWidth
+                    style={styles.changePasswordModalCancelButton}
+                  />
+                  <AppButton
+                    title={t('common.save')}
+                    onPress={handleChangePassword}
+                    variant="primary"
+                    fullWidth
+                    style={styles.changePasswordModalSaveButton}
+                  />
+                </View>
               </View>
-            </View>
-          </ScrollView>
+            </ScrollView>
+          </KeyboardAvoidingView>
         </View>
       </Modal>
 
@@ -411,75 +446,129 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({onLogout}) => {
         animationType="fade"
         onRequestClose={() => setNotificationSettingsModalVisible(false)}>
         <View style={styles.modalOverlay}>
-          <View style={styles.modalContent}>
-            <AppText variant="semiBold" size="lg" style={styles.modalTitle}>
-              Notification Settings
+          <View style={styles.notificationModalContent}>
+            <View style={styles.notificationIconContainer}>
+              <Icon name="notifications-outline" size={48} color={theme.colors.primary} />
+            </View>
+            
+            <AppText variant="semiBold" size="xl" style={styles.notificationModalTitle} align="center">
+              {t('notifications.titleSettings') || t('notifications.title')}
             </AppText>
 
-            <View style={styles.notificationItem}>
-              <AppText size="md">Prayer Times</AppText>
-              <Switch
-                value={prayerTimesNotif}
-                onValueChange={setPrayerTimesNotif}
-                trackColor={{false: theme.colors.grayMedium, true: theme.colors.primary}}
-                thumbColor={prayerTimesNotif ? theme.colors.accent : theme.colors.background}
-              />
+            <View style={styles.notificationSettingsContainer}>
+              <View style={styles.notificationSettingItem}>
+                <View style={styles.notificationSettingContent}>
+                  <AppText variant="medium" size="md" style={styles.notificationSettingLabel}>
+                    {t('notifications.questions')}
+                  </AppText>
+                  <AppText size="sm" color={theme.colors.textLight} style={styles.notificationSettingDescription}>
+                    {t('notifications.questionsDescription')}
+                  </AppText>
+                </View>
+                <Switch
+                  value={questionsNotif}
+                  onValueChange={setQuestionsNotif}
+                  trackColor={{false: theme.colors.grayMedium, true: theme.colors.primary}}
+                  thumbColor={questionsNotif ? theme.colors.accent : theme.colors.background}
+                />
+              </View>
+
+              <View style={styles.notificationSettingDivider} />
+
+              <View style={styles.notificationSettingItem}>
+                <View style={styles.notificationSettingContent}>
+                  <AppText variant="medium" size="md" style={styles.notificationSettingLabel}>
+                    {t('notifications.generalNotifications')}
+                  </AppText>
+                  <AppText size="sm" color={theme.colors.textLight} style={styles.notificationSettingDescription}>
+                    {t('notifications.generalDescription')}
+                  </AppText>
+                </View>
+                <Switch
+                  value={generalNotif}
+                  onValueChange={setGeneralNotif}
+                  trackColor={{false: theme.colors.grayMedium, true: theme.colors.primary}}
+                  thumbColor={generalNotif ? theme.colors.accent : theme.colors.background}
+                />
+              </View>
             </View>
 
-            <View style={styles.notificationItem}>
-              <AppText size="md">Events</AppText>
-              <Switch
-                value={eventsNotif}
-                onValueChange={setEventsNotif}
-                trackColor={{false: theme.colors.grayMedium, true: theme.colors.primary}}
-                thumbColor={eventsNotif ? theme.colors.accent : theme.colors.background}
-              />
-            </View>
-
-            <View style={styles.notificationItem}>
-              <AppText size="md">Donations</AppText>
-              <Switch
-                value={donationsNotif}
-                onValueChange={setDonationsNotif}
-                trackColor={{false: theme.colors.grayMedium, true: theme.colors.primary}}
-                thumbColor={donationsNotif ? theme.colors.accent : theme.colors.background}
-              />
-            </View>
-
-            <View style={styles.notificationItem}>
-              <AppText size="md">General Announcements</AppText>
-              <Switch
-                value={generalNotif}
-                onValueChange={setGeneralNotif}
-                trackColor={{false: theme.colors.grayMedium, true: theme.colors.primary}}
-                thumbColor={generalNotif ? theme.colors.accent : theme.colors.background}
-              />
-            </View>
-
-            <View style={styles.notificationItem}>
-              <AppText size="md">Questions & Answers</AppText>
-              <Switch
-                value={questionsNotif}
-                onValueChange={setQuestionsNotif}
-                trackColor={{false: theme.colors.grayMedium, true: theme.colors.primary}}
-                thumbColor={questionsNotif ? theme.colors.accent : theme.colors.background}
-              />
-            </View>
-
-            <View style={styles.modalButtons}>
+            <View style={styles.notificationModalButtons}>
               <AppButton
-                title="CANCEL"
+                title={t('common.cancel')}
                 onPress={() => setNotificationSettingsModalVisible(false)}
                 variant="outline"
-                size="small"
-                style={styles.modalButton}
+                fullWidth
+                style={styles.notificationModalCancelButton}
               />
               <AppButton
-                title="SAVE"
+                title={t('common.save')}
                 onPress={handleSaveNotificationSettings}
                 variant="primary"
-                size="small"
-                style={styles.modalButton}
+                fullWidth
+                style={styles.notificationModalSaveButton}
+              />
+            </View>
+          </View>
+        </View>
+      </Modal>
+
+      {/* Language Settings Modal */}
+      <Modal
+        visible={languageSettingsModalVisible}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setLanguageSettingsModalVisible(false)}>
+        <View style={styles.modalOverlay}>
+          <View style={styles.languageModalContent}>
+            <AppText variant="semiBold" size="xl" style={styles.languageModalTitle} align="center">
+              {t('profile.selectLanguage')}
+            </AppText>
+
+            <View style={styles.languageListWrapper}>
+              <ScrollView 
+                style={styles.languageListScrollView}
+                contentContainerStyle={styles.languageListContainer}
+                showsVerticalScrollIndicator={true}
+                nestedScrollEnabled={true}>
+                {supportedLanguages.map((language) => (
+                  <TouchableOpacity
+                    key={language.code}
+                    style={[
+                      styles.languageItem,
+                      currentLanguage === language.code && styles.languageItemSelected
+                    ]}
+                    onPress={() => handleLanguageChange(language.code)}
+                    activeOpacity={0.7}>
+                    <View style={styles.languageItemContent}>
+                      <AppText 
+                        size="md" 
+                        variant={currentLanguage === language.code ? 'semiBold' : 'regular'}
+                        style={styles.languageName}>
+                        {language.nativeName}
+                      </AppText>
+                      <AppText 
+                        size="sm" 
+                        color={theme.colors.grayDark}
+                        style={styles.languageCode}>
+                        {language.name}
+                      </AppText>
+                    </View>
+                    {currentLanguage === language.code && (
+                      <Icon name="checkmark-circle" size={24} color={theme.colors.primary} />
+                    )}
+                  </TouchableOpacity>
+                ))}
+              </ScrollView>
+            </View>
+
+            <View style={styles.languageModalButtons}>
+              <AppButton
+                title={t('common.cancel')}
+                onPress={() => setLanguageSettingsModalVisible(false)}
+                variant="outline"
+                fullWidth
+                style={styles.languageModalCancelButton}
               />
             </View>
           </View>
@@ -493,14 +582,17 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({onLogout}) => {
         animationType="fade"
         onRequestClose={() => setAboutModalVisible(false)}>
         <View style={styles.modalOverlay}>
-          <View style={styles.modalContent}>
+          <ScrollView 
+            style={styles.modalContent}
+            contentContainerStyle={styles.modalContentContainer}
+            showsVerticalScrollIndicator={false}>
             <AppText variant="semiBold" size="lg" style={styles.modalTitle}>
-              About SalaahManager
+              {t('about.title')}
             </AppText>
 
             <View style={styles.aboutSection}>
               <AppText size="sm" color={theme.colors.grayDark} style={styles.aboutLabel}>
-                Version
+                {t('about.version')}
               </AppText>
               <AppText size="md" variant="medium">
                 1.0.0
@@ -509,90 +601,59 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({onLogout}) => {
 
             <View style={styles.aboutSection}>
               <AppText size="sm" color={theme.colors.grayDark} style={styles.aboutLabel}>
-                Developer
+                {t('about.developer')}
               </AppText>
               <AppText size="md" variant="medium">
-                Fynals
+                AlAsr Team
               </AppText>
             </View>
 
             <View style={styles.aboutSection}>
               <AppText size="sm" color={theme.colors.grayDark} style={styles.aboutLabel}>
-                Description
+                {t('about.description')}
               </AppText>
               <AppText size="md" style={styles.aboutDescription}>
-                SalaahManager is a comprehensive prayer management app designed for Imams to efficiently manage prayer times, events, notifications, and community engagement.
+                {t('about.descriptionText')}
               </AppText>
             </View>
 
             <View style={styles.aboutSection}>
               <AppText size="sm" color={theme.colors.grayDark} style={styles.aboutLabel}>
-                Contact
+                {t('about.support')}
               </AppText>
               <AppText size="md" variant="medium">
-                support@fynals.com
+                dev.fynals@gmail.com
               </AppText>
             </View>
 
-            <AppButton
-              title="CLOSE"
-              onPress={() => setAboutModalVisible(false)}
-              variant="primary"
-              size="small"
-              style={styles.closeButton}
-            />
-          </View>
-        </View>
-      </Modal>
-
-      {/* Image Picker Modal */}
-      <Modal
-        visible={imagePickerModalVisible}
-        transparent
-        animationType="fade"
-        onRequestClose={() => setImagePickerModalVisible(false)}>
-        <View style={styles.modalOverlay}>
-          <View style={styles.modalContent}>
-            <AppText variant="semiBold" size="lg" style={styles.modalTitle}>
-              Profile Picture
-            </AppText>
-
-            <AppButton
-              title="📷 Take Photo"
-              onPress={handleTakePhoto}
-              variant="outline"
-              fullWidth
-              style={styles.imagePickerButton}
-            />
-
-            <AppButton
-              title="🖼️ Choose from Gallery"
-              onPress={handleSelectFromGallery}
-              variant="outline"
-              fullWidth
-              style={styles.imagePickerButton}
-            />
-
-            {profileImage && (
+            <View style={styles.aboutSection}>
               <AppButton
-                title="🗑️ Remove Photo"
-                onPress={handleRemovePhoto}
+                title={t('about.privacyPolicy')}
+                onPress={handlePrivacyPolicyPress}
                 variant="outline"
                 fullWidth
-                style={styles.imagePickerButton}
+                style={styles.aboutButton}
               />
-            )}
+              <AppButton
+                title={t('about.termsOfService')}
+                onPress={handleTermsOfServicePress}
+                variant="outline"
+                fullWidth
+                style={styles.aboutButton}
+              />
+            </View>
 
             <AppButton
-              title="CANCEL"
-              onPress={() => setImagePickerModalVisible(false)}
+              title={t('common.close')}
+              onPress={() => setAboutModalVisible(false)}
               variant="primary"
-              size="small"
+              fullWidth
               style={styles.closeButton}
             />
-          </View>
+          </ScrollView>
         </View>
       </Modal>
+
     </View>
   );
 };
@@ -623,32 +684,6 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     overflow: 'hidden',
-  },
-  avatarImage: {
-    width: 100,
-    height: 100,
-    borderRadius: 50,
-  },
-  cameraButton: {
-    position: 'absolute',
-    bottom: 0,
-    right: 0,
-    backgroundColor: theme.colors.accent,
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    justifyContent: 'center',
-    alignItems: 'center',
-    borderWidth: 3,
-    borderColor: theme.colors.background,
-    shadowColor: theme.colors.shadow,
-    shadowOffset: {
-      width: 0,
-      height: 2,
-    },
-    shadowOpacity: 0.25,
-    shadowRadius: 3,
-    elevation: 5,
   },
   userName: {
     marginBottom: theme.spacing.xs,
@@ -705,6 +740,55 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     color: theme.colors.error,
   },
+  deleteModalContent: {
+    backgroundColor: theme.colors.background,
+    borderRadius: theme.borderRadius.lg,
+    padding: theme.spacing.xl,
+    width: '85%',
+    maxWidth: 400,
+    alignItems: 'center',
+    shadowColor: theme.colors.shadow,
+    shadowOffset: {
+      width: 0,
+      height: 4,
+    },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 8,
+  },
+  deleteIconContainer: {
+    width: 80,
+    height: 80,
+    borderRadius: 40,
+    backgroundColor: 'rgba(220, 53, 69, 0.1)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: theme.spacing.lg,
+  },
+  deleteModalTitle: {
+    marginBottom: theme.spacing.sm,
+    color: theme.colors.textDark,
+  },
+  deleteModalMessage: {
+    marginBottom: theme.spacing.xl,
+    lineHeight: 22,
+    paddingHorizontal: theme.spacing.sm,
+  },
+  deleteModalButtons: {
+    width: '100%',
+  },
+  deleteModalCancelButton: {
+    marginBottom: theme.spacing.sm,
+  },
+  deleteModalConfirmButton: {
+    marginBottom: 0,
+    borderRadius: theme.borderRadius.md,
+    paddingVertical: theme.spacing.md,
+    paddingHorizontal: theme.spacing.lg,
+    alignItems: 'center',
+    justifyContent: 'center',
+    width: '100%',
+  },
   modalOverlay: {
     flex: 1,
     backgroundColor: 'rgba(0, 0, 0, 0.5)',
@@ -714,10 +798,22 @@ const styles = StyleSheet.create({
   },
   modalContent: {
     backgroundColor: theme.colors.background,
-    borderRadius: theme.borderRadius.md,
-    padding: theme.spacing.lg,
-    width: '100%',
+    borderRadius: theme.borderRadius.lg,
+    width: '85%',
     maxWidth: 400,
+    maxHeight: '80%',
+    shadowColor: theme.colors.shadow,
+    shadowOffset: {
+      width: 0,
+      height: 4,
+    },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 8,
+  },
+  modalContentContainer: {
+    padding: theme.spacing.xl,
+    flexGrow: 1,
   },
   modalTitle: {
     marginBottom: theme.spacing.md,
@@ -725,6 +821,55 @@ const styles = StyleSheet.create({
   logoutMessage: {
     marginVertical: theme.spacing.md,
     textAlign: 'center',
+  },
+  logoutModalContent: {
+    backgroundColor: theme.colors.background,
+    borderRadius: theme.borderRadius.lg,
+    padding: theme.spacing.xl,
+    width: '85%',
+    maxWidth: 400,
+    alignItems: 'center',
+    shadowColor: theme.colors.shadow,
+    shadowOffset: {
+      width: 0,
+      height: 4,
+    },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 8,
+  },
+  logoutIconContainer: {
+    width: 80,
+    height: 80,
+    borderRadius: 40,
+    backgroundColor: 'rgba(220, 53, 69, 0.1)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: theme.spacing.lg,
+  },
+  logoutModalTitle: {
+    marginBottom: theme.spacing.sm,
+    color: theme.colors.textDark,
+  },
+  logoutModalMessage: {
+    marginBottom: theme.spacing.xl,
+    lineHeight: 22,
+    paddingHorizontal: theme.spacing.sm,
+  },
+  logoutModalButtons: {
+    width: '100%',
+  },
+  logoutModalCancelButton: {
+    marginBottom: theme.spacing.sm,
+  },
+  logoutModalConfirmButton: {
+    marginBottom: 0,
+    borderRadius: theme.borderRadius.md,
+    paddingVertical: theme.spacing.md,
+    paddingHorizontal: theme.spacing.lg,
+    alignItems: 'center',
+    justifyContent: 'center',
+    width: '100%',
   },
   modalButtons: {
     flexDirection: 'row',
@@ -753,8 +898,75 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: theme.colors.border,
   },
+  notificationModalContent: {
+    backgroundColor: theme.colors.background,
+    borderRadius: theme.borderRadius.lg,
+    padding: theme.spacing.xl,
+    width: '85%',
+    maxWidth: 400,
+    alignItems: 'center',
+    shadowColor: theme.colors.shadow,
+    shadowOffset: {
+      width: 0,
+      height: 4,
+    },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 8,
+  },
+  notificationIconContainer: {
+    width: 80,
+    height: 80,
+    borderRadius: 40,
+    backgroundColor: 'rgba(0, 107, 80, 0.1)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: theme.spacing.lg,
+  },
+  notificationModalTitle: {
+    marginBottom: theme.spacing.lg,
+    color: theme.colors.textDark,
+  },
+  notificationSettingsContainer: {
+    width: '100%',
+    marginBottom: theme.spacing.xl,
+  },
+  notificationSettingItem: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+    paddingVertical: theme.spacing.lg,
+  },
+  notificationSettingContent: {
+    flex: 1,
+    marginRight: theme.spacing.md,
+  },
+  notificationSettingLabel: {
+    marginBottom: theme.spacing.xs,
+    color: theme.colors.textDark,
+  },
+  notificationSettingDescription: {
+    lineHeight: 18,
+  },
+  notificationSettingDivider: {
+    height: 1,
+    backgroundColor: theme.colors.border,
+    marginVertical: theme.spacing.sm,
+  },
+  notificationModalButtons: {
+    width: '100%',
+  },
+  notificationModalCancelButton: {
+    marginBottom: theme.spacing.sm,
+  },
+  notificationModalSaveButton: {
+    marginBottom: 0,
+  },
   aboutSection: {
     marginBottom: theme.spacing.lg,
+  },
+  aboutButton: {
+    marginBottom: theme.spacing.sm,
   },
   aboutLabel: {
     marginBottom: theme.spacing.xs,
@@ -765,8 +977,131 @@ const styles = StyleSheet.create({
   closeButton: {
     marginTop: theme.spacing.md,
   },
-  imagePickerButton: {
+  languageModalContent: {
+    backgroundColor: theme.colors.background,
+    borderRadius: theme.borderRadius.lg,
+    padding: theme.spacing.xl,
+    width: '85%',
+    maxWidth: 400,
+    maxHeight: '80%',
+    shadowColor: theme.colors.shadow,
+    shadowOffset: {
+      width: 0,
+      height: 4,
+    },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 8,
+  },
+  languageModalTitle: {
+    marginBottom: theme.spacing.lg,
+    color: theme.colors.textDark,
+  },
+  languageListWrapper: {
+    height: 280,
+    marginBottom: theme.spacing.md,
+  },
+  languageListScrollView: {
+    flex: 1,
+  },
+  languageListContainer: {
+    paddingVertical: theme.spacing.sm,
+    flexGrow: 1,
+  },
+  languageItem: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingVertical: theme.spacing.lg,
+    paddingHorizontal: theme.spacing.md,
     marginBottom: theme.spacing.sm,
+    borderBottomWidth: 1,
+    borderBottomColor: theme.colors.border,
+    borderRadius: theme.borderRadius.sm,
+    minHeight: 60,
+  },
+  languageItemSelected: {
+    backgroundColor: theme.colors.primary + '10',
+    borderBottomColor: theme.colors.primary + '30',
+    borderBottomWidth: 2,
+  },
+  languageItemContent: {
+    flex: 1,
+    marginRight: theme.spacing.md,
+  },
+  languageName: {
+    marginBottom: theme.spacing.xs / 2,
+  },
+  languageCode: {
+    textTransform: 'capitalize',
+  },
+  languageModalButtons: {
+    width: '100%',
+    marginTop: theme.spacing.md,
+    paddingTop: theme.spacing.md,
+    borderTopWidth: 1,
+    borderTopColor: theme.colors.border,
+  },
+  languageModalCancelButton: {
+    marginBottom: 0,
+  },
+  changePasswordModalContainer: {
+    width: '100%',
+    justifyContent: 'center',
+    alignItems: 'center',
+    flex: 1,
+  },
+  changePasswordModalScrollContent: {
+    flexGrow: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: theme.spacing.lg,
+    minHeight: '100%',
+  },
+  changePasswordModalContent: {
+    backgroundColor: theme.colors.background,
+    borderRadius: theme.borderRadius.lg,
+    padding: theme.spacing.xl,
+    width: '85%',
+    maxWidth: 400,
+    alignItems: 'center',
+    shadowColor: theme.colors.shadow,
+    shadowOffset: {
+      width: 0,
+      height: 4,
+    },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 8,
+  },
+  changePasswordIconContainer: {
+    width: 80,
+    height: 80,
+    borderRadius: 40,
+    backgroundColor: 'rgba(0, 107, 80, 0.1)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: theme.spacing.lg,
+  },
+  changePasswordModalTitle: {
+    marginBottom: theme.spacing.lg,
+    color: theme.colors.textDark,
+  },
+  changePasswordFormContainer: {
+    width: '100%',
+    marginBottom: theme.spacing.lg,
+  },
+  changePasswordInput: {
+    marginBottom: theme.spacing.md,
+  },
+  changePasswordModalButtons: {
+    width: '100%',
+  },
+  changePasswordModalCancelButton: {
+    marginBottom: theme.spacing.sm,
+  },
+  changePasswordModalSaveButton: {
+    marginBottom: 0,
   },
 });
 

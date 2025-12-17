@@ -1,0 +1,48 @@
+{
+  "project_info": {
+    "project_number": "1076927996047",
+    "project_id": "al-asr-masajid-prayer-timings",
+    "storage_bucket": "al-asr-masajid-prayer-timings.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:1076927996047:android:e160ee92aab940bc5b10fa",
+        "android_client_info": {
+          "package_name": "com.alasr.manager"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBKFMq8SMhi20oFWs4LnPzETFuOIFTfYL4"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:1076927996047:android:c9378b9aeecd4bbc5b10fa",
+        "android_client_info": {
+          "package_name": "com.alasr.prayertimings"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBKFMq8SMhi20oFWs4LnPzETFuOIFTfYL4"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

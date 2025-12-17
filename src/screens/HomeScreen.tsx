@@ -1,20 +1,25 @@
 import React, {useState} from 'react';
-import {View, StyleSheet, ScrollView, Modal, TouchableOpacity, Platform} from 'react-native';
+import {View, StyleSheet, ScrollView, Modal, TouchableOpacity, Platform, Alert} from 'react-native';
 import {useNavigation} from '@react-navigation/native';
 import {StackNavigationProp} from '@react-navigation/stack';
+import {BottomTabNavigationProp} from '@react-navigation/bottom-tabs';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import {AppText, AppButton, AppCard, AppHeader, AppTextInput} from '../components';
 import {theme} from '../theme';
 import {useApp} from '../context';
 import {HomeStackParamList} from '../navigation/HomeStackNavigator';
+import {BottomTabParamList} from '../navigation/types';
+import {useTranslation, translatePrayerName} from '../i18n';
 
 interface HomeScreenProps {
   onLogout: () => void;
 }
 
 export const HomeScreen: React.FC<HomeScreenProps> = ({onLogout}) => {
-  const navigation = useNavigation<StackNavigationProp<HomeStackParamList>>();
-  const {defaultMasjid, prayerTimes, updatePrayerTime, user, questions, addNotification, addEvent, notifications, events} = useApp();
+  const {t} = useTranslation();
+  const stackNavigation = useNavigation<StackNavigationProp<HomeStackParamList>>();
+  const tabNavigation = stackNavigation.getParent<BottomTabNavigationProp<BottomTabParamList>>();
+  const {defaultMasjid, prayerTimes, updatePrayerTime, user, questions, addNotification, addEvent, notifications, events, prayerTimePermissionError} = useApp();
   const [modalVisible, setModalVisible] = useState(false);
   const [logoutModalVisible, setLogoutModalVisible] = useState(false);
   const [notificationModalVisible, setNotificationModalVisible] = useState(false);
@@ -27,9 +32,8 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({onLogout}) => {
   const [questionsPressed, setQuestionsPressed] = useState(false);
   const [notificationPressed, setNotificationPressed] = useState(false);
   const [eventPressed, setEventPressed] = useState(false);
-  const [viewNotificationsPressed, setViewNotificationsPressed] = useState(false);
-  const [viewEventsPressed, setViewEventsPressed] = useState(false);
   const [editButtonPressed, setEditButtonPressed] = useState<{[key: string]: boolean}>({});
+  const [seeAllEventsPressed, setSeeAllEventsPressed] = useState(false);
   const [logoutButtonPressed, setLogoutButtonPressed] = useState(false);
   const [eventModalVisible, setEventModalVisible] = useState(false);
   const [eventName, setEventName] = useState('');
@@ -40,6 +44,11 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({onLogout}) => {
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [saveButtonPressed, setSaveButtonPressed] = useState(false);
   const [sendNotificationButtonPressed, setSendNotificationButtonPressed] = useState(false);
+  const [showTimePicker, setShowTimePicker] = useState(false);
+  const [selectedTime, setSelectedTime] = useState(new Date());
+  const [showEventTimePicker, setShowEventTimePicker] = useState(false);
+  const [selectedEventTime, setSelectedEventTime] = useState(new Date());
+  const [sendEventAsNotification, setSendEventAsNotification] = useState(false);
   
   // Use accent color from theme
   const accentColor = theme.colors.accent;
@@ -53,24 +62,84 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({onLogout}) => {
     setSelectedPrayer(prayerName);
     setNewTime(currentTime);
     setNotifyUsers(false); // Reset checkbox
+    setShowTimePicker(false);
+    
+    // Parse current time and set selectedTime for picker
+    if (currentTime && currentTime !== '--:--') {
+      try {
+        const [hours, minutes] = currentTime.split(':');
+        const date = new Date();
+        date.setHours(parseInt(hours, 10) || 0);
+        date.setMinutes(parseInt(minutes, 10) || 0);
+        setSelectedTime(date);
+      } catch (e) {
+        setSelectedTime(new Date());
+      }
+    } else {
+      setSelectedTime(new Date());
+    }
+    
     setModalVisible(true);
+  };
+
+  const handleTimePickerPress = () => {
+    setShowTimePicker(true);
+  };
+
+  const handleTimeChange = (event: any, date?: Date) => {
+    if (Platform.OS === 'android') {
+      setShowTimePicker(false);
+    }
+    
+    if (date) {
+      setSelectedTime(date);
+      // Format time as HH:MM
+      const hours = String(date.getHours()).padStart(2, '0');
+      const minutes = String(date.getMinutes()).padStart(2, '0');
+      setNewTime(`${hours}:${minutes}`);
+    }
   };
 
   const handleEditButtonPress = (prayerName: string, pressed: boolean) => {
     setEditButtonPressed(prev => ({...prev, [prayerName]: pressed}));
   };
 
-  const handleSaveTime = () => {
+  const handleSaveTime = async () => {
     if (defaultMasjid) {
-      updatePrayerTime(defaultMasjid.id, selectedPrayer, newTime);
-      
-      if (notifyUsers) {
-        // TODO: Future implementation - Send notification to all subscribers
-        console.log(`Notification will be sent for ${selectedPrayer} time change to ${newTime}`);
+      try {
+        await updatePrayerTime(defaultMasjid.id, selectedPrayer, newTime);
+        
+        if (notifyUsers) {
+          try {
+            // Send notification to all subscribers except the imam who made the change
+            // (don't show success alert, we'll show combined message)
+            const translatedPrayer = translatePrayerName(selectedPrayer);
+            await addNotification({
+              masjidId: defaultMasjid.id,
+              title: t('home.prayerTimeNotificationTitle', {prayer: translatedPrayer}),
+              description: t('home.prayerTimeNotificationDescription', {prayer: translatedPrayer, time: newTime}),
+              category: 'Prayer Times',
+              excludeCreator: true, // Don't send notification to the imam who updated the time
+            }, false); // Don't show success alert
+          } catch (notificationError) {
+            // Prayer time was updated successfully, but notification failed
+            // Don't prevent the modal from closing - just show a warning
+            console.error('Notification error:', notificationError);
+            Alert.alert(
+              t('home.prayerTimeUpdated'),
+              t('home.prayerTimeUpdatedMessage'),
+              [{text: t('common.ok')}]
+            );
+          }
+        }
+        
+        setModalVisible(false);
+        setNotifyUsers(false); // Reset for next time
+        setShowTimePicker(false);
+      } catch (error) {
+        // Error already handled in updatePrayerTime
+        // Error already handled in updatePrayerTime
       }
-      
-      setModalVisible(false);
-      setNotifyUsers(false); // Reset for next time
     }
   };
 
@@ -84,7 +153,9 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({onLogout}) => {
   };
 
   const handleQuestionsPress = () => {
-    navigation.navigate('Questions' as never);
+    if (tabNavigation) {
+      tabNavigation.navigate('Questions');
+    }
   };
 
   const handleNotificationPress = () => {
@@ -94,15 +165,14 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({onLogout}) => {
     setNotificationModalVisible(true);
   };
 
-  const handleSendNotification = () => {
+  const handleSendNotification = async () => {
     if (notificationTitle.trim() && notificationDescription.trim() && defaultMasjid) {
-      addNotification({
+      await addNotification({
         masjidId: defaultMasjid.id,
         title: notificationTitle.trim(),
         description: notificationDescription.trim(),
         category: notificationCategory,
       });
-      console.log(`Notification sent successfully!`);
       setNotificationModalVisible(false);
     }
   };
@@ -113,8 +183,29 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({onLogout}) => {
     setEventTime('');
     setEventDescription('');
     setSelectedDate(new Date());
+    setSelectedEventTime(new Date());
     setShowDatePicker(false);
+    setShowEventTimePicker(false);
+    setSendEventAsNotification(false);
     setEventModalVisible(true);
+  };
+
+  const handleEventTimePickerPress = () => {
+    setShowEventTimePicker(true);
+  };
+
+  const handleEventTimeChange = (event: any, date?: Date) => {
+    if (Platform.OS === 'android') {
+      setShowEventTimePicker(false);
+    }
+    
+    if (date) {
+      setSelectedEventTime(date);
+      // Format time as HH:MM
+      const hours = String(date.getHours()).padStart(2, '0');
+      const minutes = String(date.getMinutes()).padStart(2, '0');
+      setEventTime(`${hours}:${minutes}`);
+    }
   };
 
   const handleDateChange = (event: any, date?: Date) => {
@@ -136,157 +227,290 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({onLogout}) => {
     setShowDatePicker(true);
   };
 
-  const handleCreateEvent = () => {
+  const handleCreateEvent = async () => {
     if (eventName.trim() && eventDate.trim() && eventTime.trim() && defaultMasjid) {
-      addEvent({
-        masjidId: defaultMasjid.id,
-        name: eventName.trim(),
-        date: eventDate.trim(),
-        time: eventTime.trim(),
-        description: eventDescription.trim(),
-      });
-      console.log(`Event created successfully!`);
-      setEventModalVisible(false);
+      try {
+        await addEvent({
+          masjidId: defaultMasjid.id,
+          name: eventName.trim(),
+          date: eventDate.trim(),
+          time: eventTime.trim(),
+          description: eventDescription.trim(),
+        });
+        
+        // Send notification if checkbox is checked
+        if (sendEventAsNotification) {
+          try {
+            const notificationDescription = eventDescription.trim() 
+              ? `${eventDescription.trim()}\n\nDate: ${eventDate}\nTime: ${eventTime}`
+              : `Event Date: ${eventDate}\nEvent Time: ${eventTime}`;
+            
+            await addNotification({
+              masjidId: defaultMasjid.id,
+              title: eventName.trim(),
+              description: notificationDescription,
+              category: 'Events',
+            }, false); // Don't show success alert, event creation already shows one
+          } catch (notificationError) {
+            // Event was created successfully, but notification failed
+            console.error('Notification error:', notificationError);
+            Alert.alert(
+              t('home.eventCreated'),
+              t('home.eventCreatedMessage'),
+              [{text: t('common.ok')}]
+            );
+          }
+        }
+        
+        setEventModalVisible(false);
+        setShowEventTimePicker(false);
+        setSendEventAsNotification(false);
+      } catch (error) {
+        // Error already handled in addEvent
+        // Error already handled in createEvent
+      }
     }
   };
 
   const pendingQuestions = questions.filter(q => q.status === 'new').length;
 
+  // Format date from YYYY-MM-DD to DD-MM-YYYY
+  const formatDate = (dateStr: string): string => {
+    if (!dateStr) return '';
+    try {
+      // Check if already in DD-MM-YYYY format
+      if (/^\d{2}-\d{2}-\d{4}$/.test(dateStr)) {
+        return dateStr;
+      }
+      // Convert from YYYY-MM-DD to DD-MM-YYYY
+      const parts = dateStr.split('-');
+      if (parts.length === 3) {
+        const [year, month, day] = parts;
+        return `${day}-${month}-${year}`;
+      }
+      return dateStr;
+    } catch {
+      return dateStr;
+    }
+  };
+
+  // Format time from 24-hour (HH:MM) to 12-hour (HH:MM AM/PM)
+  const formatTime = (timeStr: string): string => {
+    if (!timeStr) return '';
+    try {
+      // Check if already in 12-hour format (contains AM/PM)
+      if (/AM|PM/i.test(timeStr)) {
+        return timeStr;
+      }
+      // Convert from 24-hour to 12-hour format
+      const parts = timeStr.split(':');
+      if (parts.length >= 2) {
+        const hours = parseInt(parts[0], 10);
+        const minutes = parts[1];
+        const period = hours >= 12 ? 'PM' : 'AM';
+        const hours12 = hours === 0 ? 12 : hours > 12 ? hours - 12 : hours;
+        return `${hours12}:${minutes} ${period}`;
+      }
+      return timeStr;
+    } catch {
+      return timeStr;
+    }
+  };
+
+  // Get last 3 events (sorted by date, most recent first)
+  const lastThreeEvents = [...events]
+    .sort((a, b) => {
+      const dateA = a.event_date || a.date || '';
+      const dateB = b.event_date || b.date || '';
+      return dateB.localeCompare(dateA);
+    })
+    .slice(0, 3);
+
+  const handleSeeAllEvents = () => {
+    if (tabNavigation) {
+      tabNavigation.navigate('Home');
+      setTimeout(() => {
+        stackNavigation.navigate('Events');
+      }, 100);
+    }
+  };
+
   return (
     <View style={styles.container}>
       <AppHeader
-        title={defaultMasjid?.name || 'No Default Masjid'}
-        subtitle="Default Masjid"
+        title={defaultMasjid?.name || t('home.noDefaultMasjid')}
+        subtitle={t('home.defaultMasjid')}
       />
 
       <ScrollView style={styles.scrollView} contentContainerStyle={styles.scrollContent}>
         <View style={[styles.welcomeCard, {borderLeftColor: accentColor}]}>
           <AppText variant="semiBold" size="lg" color={theme.colors.primary}>
-            Welcome, {user?.name}! 👋
+            {t('home.welcome', {name: user?.name || ''})}
           </AppText>
           <AppText size="sm" color={theme.colors.textLight} style={styles.welcomeText}>
-            Manage your masjid prayer times and activities
+            {t('home.welcomeSubtitle')}
           </AppText>
           <View style={[styles.accentBadge, {backgroundColor: accentColor}]}>
             <AppText size="xs" color={theme.colors.textWhite} variant="semiBold">
-              IMAM DASHBOARD
+              {t('home.imamDashboard')}
             </AppText>
           </View>
         </View>
 
         <AppText variant="medium" size="sm" style={styles.prayerTimesTitle}>
-          PRAYER TIMES
+          {t('home.prayerTimes')}
         </AppText>
 
-        {masjidPrayerTimes.map((prayer) => (
-          <View key={prayer.name} style={styles.prayerCardWrapper}>
-            <View style={[styles.prayerAccent, {backgroundColor: theme.colors.primary}]} />
-            <AppCard padding="medium" shadow="small" style={styles.prayerCard}>
-              <View style={styles.prayerRow}>
-                <View style={styles.prayerInfo}>
-                  <AppText 
-                    variant="medium" 
-                    size="xs" 
-                    color={theme.colors.textLight}
-                    style={styles.prayerLabel}>
-                    {prayer.name.toUpperCase()}
-                  </AppText>
-                  <AppText
-                    variant="semiBold"
-                    size="xl"
-                    color={theme.colors.primary}
-                    style={styles.prayerTime}>
-                    {prayer.time}
-                  </AppText>
+        {prayerTimePermissionError && (
+          <AppCard padding="medium" shadow="small" style={styles.permissionErrorCard}>
+            <AppText 
+              size="sm" 
+              color={theme.colors.error || theme.colors.warning} 
+              variant="semiBold"
+              align="center"
+              style={styles.permissionErrorText}>
+              {t('home.permissionError')}
+            </AppText>
+            <AppText 
+              size="xs" 
+              color={theme.colors.textLight} 
+              align="center"
+              style={styles.permissionErrorSubtext}>
+              {t('home.permissionErrorSubtext')}
+            </AppText>
+          </AppCard>
+        )}
+
+        {masjidPrayerTimes.map((prayer) => {
+          const prayerName = prayer.name || prayer.prayer_name || '';
+          const prayerTime = prayer.time || prayer.prayer_time || '--:--';
+          const translatedPrayerName = translatePrayerName(prayerName);
+          
+          return (
+            <View key={prayerName || prayer.id || Math.random()} style={styles.prayerCardWrapper}>
+              <View style={[styles.prayerAccent, {backgroundColor: theme.colors.primary}]} />
+              <AppCard padding="medium" shadow="small" style={styles.prayerCard}>
+                <View style={styles.prayerRow}>
+                  <View style={styles.prayerInfo}>
+                    <AppText 
+                      variant="medium" 
+                      size="xs" 
+                      color={theme.colors.textLight}
+                      style={styles.prayerLabel}>
+                      {translatedPrayerName.toUpperCase()}
+                    </AppText>
+                    <AppText
+                      variant="semiBold"
+                      size="xl"
+                      color={theme.colors.primary}
+                      style={styles.prayerTime}>
+                      {prayerTime}
+                    </AppText>
+                  </View>
+                  <TouchableOpacity
+                    onPress={() => handleEditPress(prayerName, prayerTime)}
+                    onPressIn={() => handleEditButtonPress(prayerName, true)}
+                    onPressOut={() => handleEditButtonPress(prayerName, false)}
+                    activeOpacity={1}
+                    style={[
+                      styles.editButton,
+                      editButtonPressed[prayerName] && styles.editButtonPressed
+                    ]}>
+                    <AppText 
+                      size="xs" 
+                      variant="semiBold"
+                      color={editButtonPressed[prayerName] ? theme.colors.textWhite : theme.colors.primary}
+                      style={styles.editButtonText}>
+                      {t('common.edit')}
+                    </AppText>
+                  </TouchableOpacity>
                 </View>
-                <TouchableOpacity
-                  onPress={() => handleEditPress(prayer.name, prayer.time)}
-                  onPressIn={() => handleEditButtonPress(prayer.name, true)}
-                  onPressOut={() => handleEditButtonPress(prayer.name, false)}
-                  activeOpacity={1}
-                  style={[
-                    styles.editButton,
-                    editButtonPressed[prayer.name] && styles.editButtonPressed
-                  ]}>
-                  <AppText 
-                    size="xs" 
-                    variant="semiBold"
-                    color={editButtonPressed[prayer.name] ? theme.colors.textWhite : theme.colors.primary}
-                    style={styles.editButtonText}>
-                    EDIT
-                  </AppText>
-                </TouchableOpacity>
-              </View>
-            </AppCard>
-          </View>
-        ))}
+              </AppCard>
+            </View>
+          );
+        })}
+
+        {/* Events Preview Section */}
+        <AppText variant="semiBold" size="sm" style={styles.sectionTitle}>
+          {t('home.recentEvents')}
+        </AppText>
+
+        <AppCard padding="medium" shadow="small" style={styles.eventsContainer}>
+          {lastThreeEvents.length > 0 ? (
+            <>
+                {lastThreeEvents.map((event, index) => {
+                  const rawDate = event.event_date || event.date || '';
+                  const formattedDate = formatDate(rawDate);
+                  const rawTime = event.event_time || event.time || '';
+                  const formattedTime = formatTime(rawTime);
+                  const isLastItem = index === lastThreeEvents.length - 1;
+                  return (
+                    <View key={event.id}>
+                      <View style={styles.eventItem}>
+                        <View style={styles.eventItemContent}>
+                          <View style={styles.eventItemHeader}>
+                            <AppText variant="semiBold" size="md" style={styles.eventItemName}>
+                              {event.name}
+                            </AppText>
+                          </View>
+                          <View style={styles.eventItemMeta}>
+                            {formattedDate && (
+                              <View style={styles.eventMetaBadge}>
+                                <AppText size="xs" color={theme.colors.textDark} variant="medium">
+                                  📅 {formattedDate}
+                                </AppText>
+                              </View>
+                            )}
+                            {formattedTime && (
+                              <View style={styles.eventMetaBadge}>
+                                <AppText size="xs" color={theme.colors.textDark} variant="medium">
+                                  🕐 {formattedTime}
+                                </AppText>
+                              </View>
+                            )}
+                          </View>
+                          {event.description && (
+                            <AppText size="sm" color={theme.colors.textLight} style={styles.eventItemDescription} numberOfLines={2}>
+                              {event.description}
+                            </AppText>
+                          )}
+                        </View>
+                      </View>
+                      {!isLastItem && <View style={styles.eventDivider} />}
+                    </View>
+                  );
+                })}
+              <TouchableOpacity
+                onPress={handleSeeAllEvents}
+                onPressIn={() => setSeeAllEventsPressed(true)}
+                onPressOut={() => setSeeAllEventsPressed(false)}
+                activeOpacity={1}
+                style={[
+                  styles.seeAllButton,
+                  seeAllEventsPressed && styles.seeAllButtonPressed
+                ]}>
+                <AppText variant="medium" size="sm" color={theme.colors.textDark}>
+                  {t('home.seeAll')}
+                </AppText>
+              </TouchableOpacity>
+            </>
+          ) : (
+            <View style={styles.emptyEventsContainer}>
+              <AppText size="lg">📅</AppText>
+              <AppText variant="medium" size="sm" style={styles.emptyEventsText}>
+                {t('home.noEvents')}
+              </AppText>
+            </View>
+          )}
+        </AppCard>
 
         {/* Quick Actions */}
         <AppText variant="semiBold" size="sm" style={styles.quickActionsTitle}>
-          QUICK ACTIONS
+          {t('home.quickActions')}
         </AppText>
 
         <View style={styles.actionsGrid}>
-          {/* Row 1: View Notifications and View Events */}
-          <TouchableOpacity 
-            onPress={() => navigation.navigate('Notifications')}
-            onPressIn={() => setViewNotificationsPressed(true)}
-            onPressOut={() => setViewNotificationsPressed(false)}
-            activeOpacity={1}
-            style={styles.gridItem}>
-            <View style={[
-              styles.actionCard,
-              styles.secondaryActionCard,
-              viewNotificationsPressed && styles.secondaryActionCardPressed
-            ]}>
-              <AppCard padding="medium" shadow="none">
-                <AppText variant="semiBold" size="md" style={styles.actionTitle}>
-                  📬 View
-                </AppText>
-                <AppText size="xs" color={theme.colors.textLight} style={styles.actionSubtitle}>
-                  Notifications
-                </AppText>
-                {notifications.length > 0 && (
-                  <View style={styles.badge}>
-                    <AppText size="xs" color={theme.colors.textWhite} variant="semiBold">
-                      {notifications.length}
-                    </AppText>
-                  </View>
-                )}
-              </AppCard>
-            </View>
-          </TouchableOpacity>
-
-          <TouchableOpacity 
-            onPress={() => navigation.navigate('Events')}
-            onPressIn={() => setViewEventsPressed(true)}
-            onPressOut={() => setViewEventsPressed(false)}
-            activeOpacity={1}
-            style={styles.gridItem}>
-            <View style={[
-              styles.actionCard,
-              styles.secondaryActionCard,
-              viewEventsPressed && styles.secondaryActionCardPressed
-            ]}>
-              <AppCard padding="medium" shadow="none">
-                <AppText variant="semiBold" size="md" style={styles.actionTitle}>
-                  📋 View
-                </AppText>
-                <AppText size="xs" color={theme.colors.textLight} style={styles.actionSubtitle}>
-                  Events
-                </AppText>
-                {events.length > 0 && (
-                  <View style={styles.badge}>
-                    <AppText size="xs" color={theme.colors.textWhite} variant="semiBold">
-                      {events.length}
-                    </AppText>
-                  </View>
-                )}
-              </AppCard>
-            </View>
-          </TouchableOpacity>
-
-          {/* Row 2: Questions */}
+          {/* Row 1: Questions */}
           <TouchableOpacity 
             onPress={handleQuestionsPress} 
             onPressIn={() => setQuestionsPressed(true)}
@@ -302,7 +526,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({onLogout}) => {
                 {pendingQuestions > 0 ? (
                   <View style={styles.fullWidthContent}>
                     <AppText variant="semiBold" size="md" style={styles.actionTitleCenter}>
-                      ❓ Questions
+                      ❓ {t('home.questions')}
                     </AppText>
                     <View style={styles.inlineBadge}>
                       <AppText size="xs" color={theme.colors.textWhite} variant="semiBold">
@@ -312,7 +536,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({onLogout}) => {
                   </View>
                 ) : (
                   <AppText variant="semiBold" size="md" style={styles.actionTitle}>
-                    ❓ Questions
+                    ❓ {t('home.questions')}
                   </AppText>
                 )}
               </AppCard>
@@ -333,7 +557,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({onLogout}) => {
             ]}>
               <View style={styles.primaryActionContent}>
                 <AppText variant="semiBold" size="md" color={theme.colors.textWhite}>
-                  📅 Create Event
+                  📅 {t('home.createEvent')}
                 </AppText>
               </View>
             </View>
@@ -353,7 +577,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({onLogout}) => {
             ]}>
               <View style={styles.primaryActionContent}>
                 <AppText variant="semiBold" size="md" color={theme.colors.textWhite}>
-                  🔔 Send Notification
+                  🔔 {t('home.sendNotification')}
                 </AppText>
               </View>
             </View>
@@ -370,15 +594,32 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({onLogout}) => {
         <View style={styles.modalOverlay}>
           <View style={styles.modalContent}>
             <AppText variant="semiBold" size="lg" style={styles.modalTitle}>
-              Edit {selectedPrayer} Time
+              {t('home.editPrayerTime', {prayer: translatePrayerName(selectedPrayer)})}
             </AppText>
 
-            <AppTextInput
-              label="Prayer Time"
-              placeholder="HH:MM"
-              value={newTime}
-              onChangeText={setNewTime}
-            />
+            <View style={styles.timePickerContainer}>
+              <AppText size="sm" variant="medium" style={styles.timePickerLabel}>
+                {t('home.prayerTime')}
+              </AppText>
+              <TouchableOpacity
+                onPress={handleTimePickerPress}
+                style={styles.timePickerButton}>
+                <AppText size="md" color={newTime ? theme.colors.textDark : theme.colors.textLight}>
+                  {newTime || t('home.selectTime')}
+                </AppText>
+                <AppText size="lg">🕐</AppText>
+              </TouchableOpacity>
+            </View>
+
+            {showTimePicker && (
+              <DateTimePicker
+                value={selectedTime}
+                mode="time"
+                display={Platform.OS === 'ios' ? 'spinner' : 'default'}
+                onChange={handleTimeChange}
+                is24Hour={true}
+              />
+            )}
 
             <TouchableOpacity
               style={styles.checkboxContainer}
@@ -392,13 +633,13 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({onLogout}) => {
                 )}
               </View>
               <AppText size="sm" style={styles.checkboxLabel}>
-                Notify all subscribers through notifications
+                {t('home.notifySubscribers')}
               </AppText>
             </TouchableOpacity>
 
             <View style={styles.modalButtons}>
               <AppButton
-                title="CANCEL"
+                title={t('common.cancel')}
                 onPress={() => setModalVisible(false)}
                 variant="outline"
                 size="small"
@@ -416,7 +657,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({onLogout}) => {
                   !newTime.trim() && styles.saveButtonDisabled
                 ]}>
                 <AppText variant="semiBold" size="sm" color={theme.colors.textWhite}>
-                  SAVE
+                  {t('common.save')}
                 </AppText>
               </TouchableOpacity>
             </View>
@@ -433,23 +674,23 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({onLogout}) => {
         <View style={styles.modalOverlay}>
           <View style={styles.modalContent}>
             <AppText variant="semiBold" size="lg" style={styles.modalTitle}>
-              Confirm Logout
+              {t('home.confirmLogout')}
             </AppText>
 
             <AppText size="md" style={styles.logoutMessage}>
-              Are you sure you want to logout?
+              {t('home.logoutMessage')}
             </AppText>
 
             <View style={styles.modalButtons}>
               <AppButton
-                title="CANCEL"
+                title={t('common.cancel')}
                 onPress={() => setLogoutModalVisible(false)}
                 variant="outline"
                 size="small"
                 style={styles.modalButton}
               />
               <AppButton
-                title="LOGOUT"
+                title={t('common.logout')}
                 onPress={handleConfirmLogout}
                 variant="primary"
                 size="small"
@@ -469,12 +710,23 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({onLogout}) => {
         <View style={styles.modalOverlay}>
           <View style={styles.modalContent}>
             <AppText variant="semiBold" size="lg" style={styles.modalTitle}>
-              Send Notification
+              {t('home.sendNotificationTitle')}
             </AppText>
+
+            {defaultMasjid && (
+              <View style={styles.masjidInfoContainer}>
+                <AppText size="xs" color={theme.colors.textLight} style={styles.masjidInfoLabel}>
+                  {t('home.masjid')}
+                </AppText>
+                <AppText size="md" variant="semiBold" color={theme.colors.primary}>
+                  {defaultMasjid.name}
+                </AppText>
+              </View>
+            )}
 
             <View style={styles.dropdownContainer}>
               <AppText size="sm" variant="medium" style={styles.dropdownLabel}>
-                Category
+                {t('home.category')}
               </AppText>
               <View style={styles.categoryButtons}>
                 {['General', 'Prayer Times', 'Donations', 'Events'].map(category => (
@@ -501,15 +753,15 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({onLogout}) => {
             </View>
 
             <AppTextInput
-              label="Notification Title"
-              placeholder="Enter notification title..."
+              label={t('home.notificationTitle')}
+              placeholder={t('home.notificationTitlePlaceholder')}
               value={notificationTitle}
               onChangeText={setNotificationTitle}
             />
 
             <AppTextInput
-              label="Notification Description"
-              placeholder="Enter notification description..."
+              label={t('home.notificationDescription')}
+              placeholder={t('home.notificationDescriptionPlaceholder')}
               value={notificationDescription}
               onChangeText={setNotificationDescription}
               multiline
@@ -517,7 +769,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({onLogout}) => {
 
             <View style={styles.modalButtons}>
               <AppButton
-                title="CANCEL"
+                title={t('common.cancel')}
                 onPress={() => setNotificationModalVisible(false)}
                 variant="outline"
                 size="small"
@@ -535,7 +787,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({onLogout}) => {
                   (!notificationTitle.trim() || !notificationDescription.trim()) && styles.sendNotificationButtonDisabled
                 ]}>
                 <AppText variant="semiBold" size="sm" color={theme.colors.textWhite}>
-                  SEND
+                  {t('common.send')}
                 </AppText>
               </TouchableOpacity>
             </View>
@@ -552,25 +804,25 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({onLogout}) => {
         <View style={styles.modalOverlay}>
           <View style={styles.modalContent}>
             <AppText variant="semiBold" size="lg" style={styles.modalTitle}>
-              Set Event
+              {t('home.setEvent')}
             </AppText>
 
             <AppTextInput
-              label="Event Name"
-              placeholder="Enter event name..."
+              label={t('home.eventName')}
+              placeholder={t('home.eventNamePlaceholder')}
               value={eventName}
               onChangeText={setEventName}
             />
 
             <View style={styles.datePickerContainer}>
               <AppText size="sm" variant="medium" style={styles.datePickerLabel}>
-                Date
+                {t('home.date')}
               </AppText>
               <TouchableOpacity
                 onPress={handleDatePickerPress}
                 style={styles.datePickerButton}>
                 <AppText size="md" color={eventDate ? theme.colors.textDark : theme.colors.textLight}>
-                  {eventDate || 'Select date (DD-MM-YYYY)'}
+                  {eventDate || t('home.selectDate')}
                 </AppText>
                 <AppText size="lg">📅</AppText>
               </TouchableOpacity>
@@ -586,31 +838,64 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({onLogout}) => {
               />
             )}
 
-            <AppTextInput
-              label="Time"
-              placeholder="HH:MM"
-              value={eventTime}
-              onChangeText={setEventTime}
-            />
+            <View style={styles.timePickerContainer}>
+              <AppText size="sm" variant="medium" style={styles.timePickerLabel}>
+                {t('home.time')}
+              </AppText>
+              <TouchableOpacity
+                onPress={handleEventTimePickerPress}
+                style={styles.timePickerButton}>
+                <AppText size="md" color={eventTime ? theme.colors.textDark : theme.colors.textLight}>
+                  {eventTime || t('home.selectTime')}
+                </AppText>
+                <AppText size="lg">🕐</AppText>
+              </TouchableOpacity>
+            </View>
+
+            {showEventTimePicker && (
+              <DateTimePicker
+                value={selectedEventTime}
+                mode="time"
+                display={Platform.OS === 'ios' ? 'spinner' : 'default'}
+                onChange={handleEventTimeChange}
+                is24Hour={true}
+              />
+            )}
 
             <AppTextInput
-              label="Description (Optional)"
-              placeholder="Enter event description..."
+              label={t('home.descriptionOptional')}
+              placeholder={t('home.descriptionPlaceholder')}
               value={eventDescription}
               onChangeText={setEventDescription}
               multiline
             />
 
+            <TouchableOpacity
+              style={styles.checkboxContainer}
+              onPress={() => setSendEventAsNotification(!sendEventAsNotification)}
+              activeOpacity={0.7}>
+              <View style={[styles.checkbox, sendEventAsNotification && styles.checkboxChecked]}>
+                {sendEventAsNotification && (
+                  <AppText size="sm" color={theme.colors.textWhite}>
+                    ✓
+                  </AppText>
+                )}
+              </View>
+              <AppText size="sm" style={styles.checkboxLabel}>
+                {t('home.sendAsNotification')}
+              </AppText>
+            </TouchableOpacity>
+
             <View style={styles.modalButtons}>
               <AppButton
-                title="CANCEL"
+                title={t('common.cancel')}
                 onPress={() => setEventModalVisible(false)}
                 variant="outline"
                 size="small"
                 style={styles.modalButton}
               />
               <AppButton
-                title="CREATE"
+                title={t('common.create')}
                 onPress={handleCreateEvent}
                 variant="primary"
                 size="small"
@@ -656,11 +941,83 @@ const styles = StyleSheet.create({
   },
   sectionTitle: {
     marginBottom: theme.spacing.md,
+    letterSpacing: 1,
+    color: theme.colors.textDark,
+  },
+  eventsContainer: {
+    marginBottom: theme.spacing.lg,
+  },
+  eventItem: {
+    paddingVertical: theme.spacing.sm,
+  },
+  eventDivider: {
+    height: 1,
+    backgroundColor: theme.colors.border,
+    marginVertical: theme.spacing.xs,
+  },
+  eventItemContent: {
+    flex: 1,
+  },
+  eventItemHeader: {
+    marginBottom: theme.spacing.sm,
+  },
+  eventItemName: {
+    color: theme.colors.textDark,
+  },
+  eventItemMeta: {
+    flexDirection: 'row',
+    gap: theme.spacing.sm,
+    marginBottom: theme.spacing.sm,
+    flexWrap: 'wrap',
+  },
+  eventMetaBadge: {
+    paddingHorizontal: theme.spacing.sm,
+    paddingVertical: theme.spacing.xs / 2,
+    borderRadius: theme.borderRadius.xs,
+    backgroundColor: theme.colors.backgroundLight,
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+  },
+  eventItemDescription: {
+    marginTop: theme.spacing.xs,
+    lineHeight: 18,
+  },
+  seeAllButton: {
+    marginTop: theme.spacing.md,
+    paddingVertical: theme.spacing.sm,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  seeAllButtonPressed: {
+    opacity: 0.6,
+  },
+  emptyEventsContainer: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: theme.spacing.lg,
+  },
+  emptyEventsText: {
+    marginTop: theme.spacing.sm,
+    textAlign: 'center',
+    color: theme.colors.textLight,
   },
   prayerTimesTitle: {
     marginBottom: theme.spacing.md,
     letterSpacing: 1,
     color: theme.colors.textDark,
+  },
+  permissionErrorCard: {
+    marginBottom: theme.spacing.md,
+    backgroundColor: theme.colors.backgroundLight,
+    borderLeftWidth: 4,
+    borderLeftColor: theme.colors.error || theme.colors.warning,
+  },
+  permissionErrorText: {
+    marginBottom: theme.spacing.xs,
+  },
+  permissionErrorSubtext: {
+    marginTop: theme.spacing.xs,
+    lineHeight: 18,
   },
   quickActionsTitle: {
     marginBottom: theme.spacing.sm,
@@ -824,6 +1181,23 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingHorizontal: 8,
   },
+  timePickerContainer: {
+    marginBottom: theme.spacing.md,
+  },
+  timePickerLabel: {
+    marginBottom: theme.spacing.sm,
+    color: theme.colors.textDark,
+  },
+  timePickerButton: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+    borderRadius: theme.borderRadius.sm,
+    padding: theme.spacing.md,
+    backgroundColor: theme.colors.background,
+  },
   datePickerContainer: {
     marginBottom: theme.spacing.md,
   },
@@ -928,6 +1302,17 @@ const styles = StyleSheet.create({
   logoutMessage: {
     marginVertical: theme.spacing.md,
     textAlign: 'center',
+  },
+  masjidInfoContainer: {
+    marginBottom: theme.spacing.md,
+    padding: theme.spacing.sm,
+    backgroundColor: theme.colors.backgroundLight,
+    borderRadius: theme.borderRadius.sm,
+    borderLeftWidth: 3,
+    borderLeftColor: theme.colors.primary,
+  },
+  masjidInfoLabel: {
+    marginBottom: theme.spacing.xs,
   },
   dropdownContainer: {
     marginBottom: theme.spacing.md,

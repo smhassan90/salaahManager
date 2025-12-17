@@ -1,6 +1,7 @@
 import React from 'react';
-import {View, StyleSheet, FlatList, TouchableOpacity} from 'react-native';
+import {View, StyleSheet, FlatList, TouchableOpacity, Alert} from 'react-native';
 import {useNavigation} from '@react-navigation/native';
+import Icon from 'react-native-vector-icons/Ionicons';
 import {AppText, AppCard, AppHeader} from '../components';
 import {theme} from '../theme';
 import {useApp} from '../context';
@@ -8,7 +9,25 @@ import {Event} from '../types';
 
 export const EventsScreen: React.FC = () => {
   const navigation = useNavigation();
-  const {events, defaultMasjid} = useApp();
+  const {events, defaultMasjid, deleteEvent, eventPermissionError} = useApp();
+
+  const handleDeleteEvent = (event: Event) => {
+    Alert.alert(
+      'Delete Event',
+      `Are you sure you want to delete "${event.name}"? This will delete the event for all users.`,
+      [
+        {
+          text: 'Cancel',
+          style: 'cancel',
+        },
+        {
+          text: 'Delete',
+          style: 'destructive',
+          onPress: () => deleteEvent(event.id),
+        },
+      ],
+    );
+  };
 
   const renderItem = ({item}: {item: Event}) => (
     <AppCard padding="medium" shadow="small" style={styles.eventCard}>
@@ -25,6 +44,12 @@ export const EventsScreen: React.FC = () => {
             </AppText>
           </View>
         </View>
+        <TouchableOpacity
+          onPress={() => handleDeleteEvent(item)}
+          style={styles.deleteButton}
+          hitSlop={{top: 10, bottom: 10, left: 10, right: 10}}>
+          <Icon name="trash-outline" size={20} color={theme.colors.error} />
+        </TouchableOpacity>
       </View>
       <AppText variant="semiBold" size="md" style={styles.eventName}>
         {item.name}
@@ -42,9 +67,31 @@ export const EventsScreen: React.FC = () => {
       <AppHeader
         title="EVENTS"
         subtitle={defaultMasjid?.name}
-        leftIcon="⬅️"
+        leftIcon={<Icon name="arrow-back" size={24} color={theme.colors.textWhite} />}
         onLeftPress={() => navigation.goBack()}
       />
+      {eventPermissionError && (
+        <View style={styles.permissionErrorContainer}>
+          <AppCard padding="medium" shadow="small" style={styles.permissionErrorCard}>
+            <AppText 
+              size="sm" 
+              color={theme.colors.error || theme.colors.warning} 
+              variant="semiBold"
+              align="center"
+              style={styles.permissionErrorText}>
+              You don't have permission to create events
+            </AppText>
+            <AppText 
+              size="xs" 
+              color={theme.colors.textLight} 
+              align="center"
+              style={styles.permissionErrorSubtext}>
+              Please contact your masjid administrator to grant you the "can_create_events" permission.
+            </AppText>
+          </AppCard>
+        </View>
+      )}
+
       <FlatList
         data={events}
         renderItem={renderItem}
@@ -75,11 +122,33 @@ const styles = StyleSheet.create({
     padding: theme.spacing.md,
     flexGrow: 1,
   },
+  permissionErrorContainer: {
+    padding: theme.spacing.md,
+    paddingBottom: 0,
+  },
+  permissionErrorCard: {
+    backgroundColor: theme.colors.backgroundLight,
+    borderLeftWidth: 4,
+    borderLeftColor: theme.colors.error || theme.colors.warning,
+  },
+  permissionErrorText: {
+    marginBottom: theme.spacing.xs,
+  },
+  permissionErrorSubtext: {
+    marginTop: theme.spacing.xs,
+    lineHeight: 18,
+  },
   eventCard: {
     marginBottom: theme.spacing.md,
   },
   eventHeader: {
     marginBottom: theme.spacing.sm,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+  },
+  deleteButton: {
+    padding: theme.spacing.xs,
   },
   dateTimeContainer: {
     flexDirection: 'row',

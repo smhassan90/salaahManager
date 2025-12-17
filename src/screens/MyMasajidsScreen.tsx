@@ -4,8 +4,10 @@ import {AppText, AppCard, AppHeader} from '../components';
 import {theme} from '../theme';
 import {useApp} from '../context';
 import {Masjid} from '../types';
+import {useTranslation} from '../i18n';
 
 export const MyMasajidsScreen: React.FC = () => {
+  const {t} = useTranslation();
   const {masajids, setDefaultMasjid} = useApp();
   const [viewDetailsPressed, setViewDetailsPressed] = useState<{[key: string]: boolean}>({});
   const [defaultButtonPressed, setDefaultButtonPressed] = useState<{[key: string]: boolean}>({});
@@ -13,13 +15,18 @@ export const MyMasajidsScreen: React.FC = () => {
   const handleViewDetails = (masjid: Masjid) => {
     Alert.alert(
       masjid.name,
-      `Location: ${masjid.location}\n\nContact: +92 123 4567890\nEmail: info@${masjid.name.toLowerCase().replace(/\s+/g, '')}.com`,
-      [{text: 'OK'}]
+      `${t('common.location')}: ${masjid.location || 'N/A'}`,
+      [{text: t('common.ok')}]
     );
   };
 
-  const handleSetDefault = (masjidId: string) => {
-    setDefaultMasjid(masjidId);
+  const handleSetDefault = async (masjidId: string) => {
+    try {
+      await setDefaultMasjid(masjidId);
+    } catch (error) {
+      // Error already handled in setDefaultMasjid
+      // Error setting default masjid - already handled by AppContext
+    }
   };
 
   const renderMasjid = ({item}: {item: Masjid}) => (
@@ -50,7 +57,7 @@ export const MyMasajidsScreen: React.FC = () => {
             variant="semiBold"
             color={viewDetailsPressed[item.id] ? theme.colors.textWhite : theme.colors.primary}
             style={styles.viewDetailsText}>
-            VIEW DETAILS
+            {t('masajids.viewDetails')}
           </AppText>
         </TouchableOpacity>
 
@@ -69,7 +76,7 @@ export const MyMasajidsScreen: React.FC = () => {
               variant="semiBold"
               color={defaultButtonPressed[item.id] ? theme.colors.textWhite : theme.colors.accent}
               style={styles.defaultButtonText}>
-              SET DEFAULT
+              {t('masajids.setDefault')}
             </AppText>
           </TouchableOpacity>
         )}
@@ -81,7 +88,7 @@ export const MyMasajidsScreen: React.FC = () => {
               color={theme.colors.textWhite}
               variant="semiBold"
               style={styles.defaultBadgeText}>
-              DEFAULT
+              {t('masajids.default')}
             </AppText>
           </View>
         )}
@@ -91,7 +98,7 @@ export const MyMasajidsScreen: React.FC = () => {
 
   return (
     <View style={styles.container}>
-      <AppHeader title="MY MASAJIDS" />
+      <AppHeader title={t('masajids.title')} />
 
       <FlatList
         data={masajids}

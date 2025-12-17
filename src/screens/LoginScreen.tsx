@@ -16,27 +16,30 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({onLoginSuccess}) => {
   const [loading, setLoading] = useState(false);
   const [loginButtonPressed, setLoginButtonPressed] = useState(false);
 
-  const handleLogin = () => {
+  const handleLogin = async () => {
     setError('');
     setLoading(true);
 
-    setTimeout(() => {
-      const success = login(email, password);
+    try {
+      const success = await login(email, password);
       setLoading(false);
 
       if (success) {
         onLoginSuccess();
-      } else {
-        setError('Invalid email or password. Please try again.');
       }
-    }, 500);
+    } catch (error) {
+      setLoading(false);
+      // Error is already shown by the login function via Alert
+      // We can also set local error state for inline display
+      setError('Login failed. Please try again.');
+    }
   };
 
   return (
     <KeyboardAvoidingView
       style={styles.container}
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
-      <AppHeader title="Login" />
+      <AppHeader title="Al Asr" />
       <ScrollView
         style={styles.scrollView}
         contentContainerStyle={styles.scrollContent}>
@@ -49,7 +52,7 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({onLoginSuccess}) => {
             size="xxl"
             color={theme.colors.primary}
             style={styles.title}>
-            SalaahManager
+            Al Asr
           </AppText>
           <AppText
             size="sm"
@@ -101,22 +104,6 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({onLoginSuccess}) => {
               {loading ? 'Logging in...' : 'Login'}
             </AppText>
           </TouchableOpacity>
-
-          <View style={styles.credentialsContainer}>
-            <AppText
-              size="xs"
-              color={theme.colors.textLight}
-              align="center"
-              style={styles.credentialsText}>
-              Demo Credentials:
-            </AppText>
-            <AppText size="xs" color={theme.colors.textLight} align="center">
-              Email: imam@salaahmanager.com
-            </AppText>
-            <AppText size="xs" color={theme.colors.textLight} align="center">
-              Password: admin123
-            </AppText>
-          </View>
         </View>
       </ScrollView>
     </KeyboardAvoidingView>
@@ -182,16 +169,6 @@ const styles = StyleSheet.create({
     backgroundColor: theme.colors.grayMedium,
     borderColor: theme.colors.grayMedium,
     opacity: 0.5,
-  },
-  credentialsContainer: {
-    marginTop: theme.spacing.xl,
-    padding: theme.spacing.md,
-    backgroundColor: theme.colors.backgroundLight,
-    borderRadius: theme.borderRadius.md,
-  },
-  credentialsText: {
-    marginBottom: theme.spacing.xs,
-    fontWeight: theme.typography.fontWeight.semiBold,
   },
 });
 

@@ -1,5 +1,5 @@
-import React from 'react';
-import {NavigationContainer} from '@react-navigation/native';
+import React, {useRef} from 'react';
+import {NavigationContainer, NavigationContainerRef} from '@react-navigation/native';
 import {createStackNavigator} from '@react-navigation/stack';
 import {RootStackParamList} from './types';
 import {
@@ -8,14 +8,21 @@ import {
   MasjidDetailScreen,
   SendNotificationScreen,
   AddEventScreen,
+  ChangePasswordScreen,
+  NotificationSettingsScreen,
+  LanguageSettingsScreen,
+  AboutScreen,
 } from '../screens';
 import {BottomTabNavigator} from './BottomTabNavigator';
 
 const Stack = createStackNavigator<RootStackParamList>();
 
+// Create a navigation ref that can be accessed globally
+export const navigationRef = React.createRef<NavigationContainerRef<RootStackParamList>>();
+
 export const AppNavigator: React.FC = () => {
   return (
-    <NavigationContainer>
+    <NavigationContainer ref={navigationRef}>
       <Stack.Navigator
         initialRouteName="Splash"
         screenOptions={{
@@ -30,6 +37,10 @@ export const AppNavigator: React.FC = () => {
           component={SendNotificationScreen}
         />
         <Stack.Screen name="AddEvent" component={AddEventScreen} />
+        <Stack.Screen name="ChangePassword" component={ChangePasswordScreen} />
+        <Stack.Screen name="NotificationSettings" component={NotificationSettingsScreen} />
+        <Stack.Screen name="LanguageSettings" component={LanguageSettingsScreen} />
+        <Stack.Screen name="About" component={AboutScreen} />
       </Stack.Navigator>
     </NavigationContainer>
   );

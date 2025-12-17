@@ -29,7 +29,7 @@ export const SplashScreen: React.FC<SplashScreenProps> = ({onFinish}) => {
         size="xxxl"
         color={theme.colors.primary}
         style={styles.title}>
-        SalaahManager
+        Al Asr
       </AppText>
       <AppText size="md" color={theme.colors.textLight}>
         Manage Your Masjid with Ease
