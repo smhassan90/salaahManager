@@ -53,6 +53,11 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
   
   func application(_ application: UIApplication, didRegisterForRemoteNotificationsWithDeviceToken deviceToken: Data) {
     Messaging.messaging().apnsToken = deviceToken
+    print("✅ APNS token registered successfully")
+  }
+  
+  func application(_ application: UIApplication, didFailToRegisterForRemoteNotificationsWithError error: Error) {
+    print("❌ Failed to register for remote notifications: \(error.localizedDescription)")
   }
 }
 
@@ -84,6 +89,10 @@ extension AppDelegate: UNUserNotificationCenterDelegate {
 // MARK: - MessagingDelegate
 extension AppDelegate: MessagingDelegate {
   func messaging(_ messaging: Messaging, didReceiveRegistrationToken fcmToken: String?) {
-    print("FCM Token: \(fcmToken ?? "nil")")
+    if let token = fcmToken {
+      print("✅ FCM Token received: \(token)")
+    } else {
+      print("⚠️ FCM Token is nil")
+    }
   }
 }

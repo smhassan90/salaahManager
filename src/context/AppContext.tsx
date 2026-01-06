@@ -108,6 +108,25 @@ export const AppProvider: React.FC<{children: ReactNode}> = ({children}) => {
   useEffect(() => {
     if (isLoggedIn && user) {
       initializeFCM();
+      
+      // Set up token refresh listener
+      const unsubscribeTokenRefresh = messaging().onTokenRefresh(async (newToken) => {
+        console.log('🔄 FCM token refreshed:', newToken);
+        try {
+          // Update stored token
+          await fcmService.getToken(); // This will update the stored token
+          // Re-register with backend
+          await userService.registerFCMToken(newToken);
+          console.log('✅ FCM token re-registered with backend');
+        } catch (error: any) {
+          console.error('❌ Error re-registering FCM token:', error);
+          // Token is stored locally, will retry on next app launch
+        }
+      });
+      
+      return () => {
+        unsubscribeTokenRefresh();
+      };
     } else if (!isLoggedIn) {
       // Delete FCM token on logout
       fcmService.deleteToken();
@@ -185,16 +204,32 @@ export const AppProvider: React.FC<{children: ReactNode}> = ({children}) => {
     try {
       const token = await fcmService.initialize();
       if (token) {
-        // Register token with backend
-        try {
-          await userService.registerFCMToken(token);
-        } catch (error: any) {
-          // Silently handle FCM registration errors - token is stored locally
-          // Will retry on next app launch or when user logs in
-        }
+        // Register token with backend with retry logic
+        await registerFCMTokenWithRetry(token);
       }
     } catch (error) {
+      console.error('❌ FCM initialization failed:', error);
       // FCM initialization failed - non-critical, app can continue
+    }
+  };
+
+  // Register FCM token with retry logic
+  const registerFCMTokenWithRetry = async (token: string, retries: number = 3): Promise<void> => {
+    for (let attempt = 1; attempt <= retries; attempt++) {
+      try {
+        await userService.registerFCMToken(token);
+        console.log('✅ FCM token registered with backend successfully');
+        return;
+      } catch (error: any) {
+        console.error(`❌ FCM token registration attempt ${attempt}/${retries} failed:`, error);
+        if (attempt < retries) {
+          // Wait before retrying (exponential backoff)
+          await new Promise(resolve => setTimeout(resolve, 1000 * attempt));
+        } else {
+          console.warn('⚠️ FCM token registration failed after all retries. Token stored locally, will retry later.');
+          // Token is stored locally, will retry on next app launch or token refresh
+        }
+      }
     }
   };
 

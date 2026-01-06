@@ -788,6 +788,77 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     width: '100%',
+    shadowColor: theme.colors.error,
+    shadowOffset: {
+      width: 0,
+      height: 3,
+    },
+    shadowOpacity: 0.3,
+    shadowRadius: 4,
+    elevation: 4,
+  },
+  deleteModalConfirmButtonPressed: {
+    backgroundColor: '#B91C1C',
+    shadowOpacity: 0.45,
+    shadowRadius: 6,
+    elevation: 6,
+  },
+  deleteModalContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  deleteModalScrollContent: {
+    flexGrow: 1,
+    justifyContent: 'center',
+    padding: theme.spacing.lg,
+  },
+  deletePasswordFormContainer: {
+    width: '100%',
+    marginBottom: theme.spacing.lg,
+  },
+  deletePasswordInput: {
+    marginBottom: 0,
+  },
+  deleteSuccessModalContent: {
+    backgroundColor: theme.colors.background,
+    borderRadius: theme.borderRadius.lg,
+    padding: theme.spacing.xl,
+    width: '85%',
+    maxWidth: 400,
+    alignItems: 'center',
+    shadowColor: theme.colors.shadow,
+    shadowOffset: {
+      width: 0,
+      height: 4,
+    },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 8,
+  },
+  deleteSuccessIconContainer: {
+    width: 100,
+    height: 100,
+    borderRadius: 50,
+    backgroundColor: 'rgba(40, 167, 69, 0.1)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: theme.spacing.lg,
+  },
+  deleteSuccessModalTitle: {
+    marginBottom: theme.spacing.sm,
+    color: theme.colors.textDark,
+  },
+  deleteSuccessModalMessage: {
+    marginBottom: theme.spacing.xl,
+    lineHeight: 22,
+    paddingHorizontal: theme.spacing.sm,
+  },
+  deleteSuccessModalButtons: {
+    width: '100%',
+  },
+  deleteSuccessModalButton: {
+    marginBottom: 0,
   },
   modalOverlay: {
     flex: 1,

@@ -24,9 +24,14 @@ function AppContent() {
   useEffect(() => {
     if (!isLoggedIn) return;
 
+    let isMounted = true;
+    let initialNotificationChecked = false;
+
     // Handle foreground messages
     const unsubscribeForeground = messaging().onMessage(async remoteMessage => {
-      console.log('Foreground notification:', remoteMessage);
+      console.log('📬 Foreground notification received:', remoteMessage);
+      
+      if (!isMounted) return;
       
       // Show alert for foreground notifications
       if (remoteMessage.notification) {
@@ -37,34 +42,51 @@ function AppContent() {
       }
 
       // Refresh notifications if default masjid is available
-      if (defaultMasjid) {
-        fetchNotifications(defaultMasjid.id);
+      if (defaultMasjid && isMounted) {
+        try {
+          await fetchNotifications(defaultMasjid.id);
+        } catch (error) {
+          console.error('Error fetching notifications after foreground message:', error);
+        }
       }
     });
 
     // Handle notification opened when app is in background
     const unsubscribeOpened = messaging().onNotificationOpenedApp(remoteMessage => {
-      console.log('Notification opened app:', remoteMessage);
+      console.log('📬 Notification opened app from background:', remoteMessage);
+      if (!isMounted) return;
+      
       // Refresh notifications
       if (defaultMasjid) {
-        fetchNotifications(defaultMasjid.id);
+        fetchNotifications(defaultMasjid.id).catch(error => {
+          console.error('Error fetching notifications after opening from background:', error);
+        });
       }
     });
 
-    // Check if app was opened from a notification
-    messaging()
-      .getInitialNotification()
-      .then(remoteMessage => {
-        if (remoteMessage) {
-          console.log('App opened from notification:', remoteMessage);
-          // Refresh notifications
-          if (defaultMasjid) {
-            fetchNotifications(defaultMasjid.id);
+    // Check if app was opened from a notification (only check once)
+    if (!initialNotificationChecked) {
+      initialNotificationChecked = true;
+      messaging()
+        .getInitialNotification()
+        .then(remoteMessage => {
+          if (remoteMessage && isMounted) {
+            console.log('📬 App opened from notification:', remoteMessage);
+            // Refresh notifications
+            if (defaultMasjid) {
+              fetchNotifications(defaultMasjid.id).catch(error => {
+                console.error('Error fetching notifications after initial notification:', error);
+              });
+            }
           }
-        }
-      });
+        })
+        .catch(error => {
+          console.error('Error checking initial notification:', error);
+        });
+    }
 
     return () => {
+      isMounted = false;
       unsubscribeForeground();
       unsubscribeOpened();
     };
