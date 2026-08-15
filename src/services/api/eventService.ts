@@ -11,7 +11,9 @@ export interface CreateEventRequest {
   masjidId: string;
   name: string;
   description?: string;
-  eventDate: string; // YYYY-MM-DD
+  eventType?: 'one_time' | 'recurring';
+  dayOfWeek?: number;
+  eventDate?: string; // YYYY-MM-DD (optional for recurring)
   eventTime: string; // HH:MM
   location?: string;
 }
@@ -19,6 +21,8 @@ export interface CreateEventRequest {
 export interface UpdateEventRequest {
   name?: string;
   description?: string;
+  eventType?: 'one_time' | 'recurring';
+  dayOfWeek?: number;
   eventDate?: string;
   eventTime?: string;
   location?: string;

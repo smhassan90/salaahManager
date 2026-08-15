@@ -29,13 +29,21 @@ export const EventsScreen: React.FC = () => {
     );
   };
 
+  const getEventDateString = (item: Event) => {
+    if (item.event_type === 'recurring' && item.day_of_week !== undefined) {
+      const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+      return `Every ${days[item.day_of_week]}`;
+    }
+    return item.date || 'No Date';
+  };
+
   const renderItem = ({item}: {item: Event}) => (
     <AppCard padding="medium" shadow="small" style={styles.eventCard}>
       <View style={styles.eventHeader}>
         <View style={styles.dateTimeContainer}>
           <View style={styles.dateBadge}>
             <AppText size="xs" color={theme.colors.primary} variant="semiBold">
-              📅 {item.date}
+              📅 {getEventDateString(item)}
             </AppText>
           </View>
           <View style={styles.timeBadge}>

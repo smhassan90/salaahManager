@@ -1,5 +1,6 @@
 import React, {createContext, useContext, useState, useEffect, ReactNode} from 'react';
 import {Alert} from 'react-native';
+import messaging from '@react-native-firebase/messaging';
 import {User, Masjid, PrayerTime, Question, Notification, Event} from '../types';
 import {
   authService,
@@ -45,13 +46,13 @@ interface AppContextType {
   fetchPrayerTimes: (masjidId: string) => Promise<void>;
   updatePrayerTime: (masjidId: string, prayer: string, time: string) => Promise<void>;
   fetchQuestions: (masjidId: string) => Promise<void>;
-  replyToQuestion: (questionId: string, reply: string) => Promise<void>;
+  replyToQuestion: (questionId: string, reply: string) => Promise<boolean>;
   fetchNotifications: (masjidId: string) => Promise<void>;
   addNotification: (notification: {masjidId: string; title: string; description?: string; category?: string; excludeCreator?: boolean}, showSuccessAlert?: boolean) => Promise<void>;
   markNotificationAsRead: (notificationId: string) => Promise<void>;
   markAllNotificationsAsRead: () => Promise<void>;
   fetchEvents: (masjidId: string) => Promise<void>;
-  addEvent: (event: {masjidId: string; name: string; description?: string; date: string; time: string; location?: string}) => Promise<void>;
+  addEvent: (event: {masjidId: string; name: string; description?: string; eventType?: 'one_time' | 'recurring'; dayOfWeek?: number; date?: string; time: string; location?: string}) => Promise<void>;
   deleteEvent: (eventId: string) => Promise<void>;
   
   // Language Actions
@@ -224,7 +225,7 @@ export const AppProvider: React.FC<{children: ReactNode}> = ({children}) => {
         console.error(`❌ FCM token registration attempt ${attempt}/${retries} failed:`, error);
         if (attempt < retries) {
           // Wait before retrying (exponential backoff)
-          await new Promise(resolve => setTimeout(resolve, 1000 * attempt));
+          await new Promise(resolve => setTimeout(() => resolve(undefined), 1000 * attempt));
         } else {
           console.warn('⚠️ FCM token registration failed after all retries. Token stored locally, will retry later.');
           // Token is stored locally, will retry on next app launch or token refresh
@@ -356,6 +357,7 @@ export const AppProvider: React.FC<{children: ReactNode}> = ({children}) => {
         const timeStr = prayerTime.length >= 5 ? prayerTime.substring(0, 5) : prayerTime;
         
         return {
+          ...pt,
           id: pt.id,
           masjid_id: pt.masjid_id || masjidId,
           prayer_name: prayerName,
@@ -442,6 +444,111 @@ export const AppProvider: React.FC<{children: ReactNode}> = ({children}) => {
 
       // Get current prayer times for this masjid
       const currentTimes = prayerTimes[masjidId] || [];
+      const currentPrayer = currentTimes.find(pt =>
+        pt.name?.toLowerCase() === prayer.toLowerCase() ||
+        pt.prayer_name?.toLowerCase() === prayer.toLowerCase()
+      );
+      const isAutoScheduledMaghrib =
+        prayer.toLowerCase() === 'maghrib' &&
+        currentPrayer?.auto_scheduled === true;
+      
+      // Helper function to convert time string (HH:MM) to minutes since midnight
+      const timeToMinutes = (timeStr: string): number | null => {
+        if (!timeStr || timeStr === '--:--') return null;
+        const parts = timeStr.split(':');
+        if (parts.length !== 2) return null;
+        const hours = parseInt(parts[0], 10);
+        const minutes = parseInt(parts[1], 10);
+        if (isNaN(hours) || isNaN(minutes)) return null;
+        return hours * 60 + minutes;
+      };
+      
+      // Helper function to get prayer time
+      const getPrayerTime = (prayerName: string): string | null => {
+        const prayer = currentTimes.find(pt => 
+          (pt.name?.toLowerCase() === prayerName.toLowerCase()) || 
+          (pt.prayer_name?.toLowerCase() === prayerName.toLowerCase())
+        );
+        return prayer?.time || prayer?.prayer_time || null;
+      };
+      
+      // Validate prayer time order
+      const validatePrayerTimeOrder = (prayerName: string, newTime: string): string | null => {
+        const newTimeMinutes = timeToMinutes(newTime);
+        if (newTimeMinutes === null) return null; // Skip validation if time is invalid
+        
+        const prayerLower = prayerName.toLowerCase();
+        
+        // Get all prayer times (with the new time applied)
+        const getTime = (prayer: string): number | null => {
+          if (prayer.toLowerCase() === prayerLower) {
+            return newTimeMinutes;
+          }
+          const time = getPrayerTime(prayer);
+          return time ? timeToMinutes(time) : null;
+        };
+        
+        const fajr = getTime('Fajr');
+        const dhuhr = getTime('Dhuhr');
+        const asr = getTime('Asr');
+        const maghrib = getTime('Maghrib');
+        const isha = getTime('Isha');
+        
+        // Validate Fajr: should not exceed Dhuhr
+        if (prayerLower === 'fajr') {
+          if (dhuhr !== null && newTimeMinutes >= dhuhr) {
+            return 'Fajr time must be before Dhuhr time';
+          }
+        }
+        
+        // Validate Dhuhr: should not be less than Fajr and should not exceed Asr
+        if (prayerLower === 'dhuhr') {
+          if (fajr !== null && newTimeMinutes <= fajr) {
+            return 'Dhuhr time must be after Fajr time';
+          }
+          if (asr !== null && newTimeMinutes >= asr) {
+            return 'Dhuhr time must be before Asr time';
+          }
+        }
+        
+        // Validate Asr: should not exceed Maghrib and should not be less than Dhuhr
+        if (prayerLower === 'asr') {
+          if (dhuhr !== null && newTimeMinutes <= dhuhr) {
+            return 'Asr time must be after Dhuhr time';
+          }
+          if (maghrib !== null && newTimeMinutes >= maghrib) {
+            return 'Asr time must be before Maghrib time';
+          }
+        }
+        
+        // Validate Maghrib: should not exceed Isha
+        if (prayerLower === 'maghrib') {
+          if (asr !== null && newTimeMinutes <= asr) {
+            return 'Maghrib time must be after Asr time';
+          }
+          if (isha !== null && newTimeMinutes >= isha) {
+            return 'Maghrib time must be before Isha time';
+          }
+        }
+        
+        // Validate Isha: should not be less than Maghrib
+        if (prayerLower === 'isha') {
+          if (maghrib !== null && newTimeMinutes <= maghrib) {
+            return 'Isha time must be after Maghrib time';
+          }
+        }
+        
+        return null; // Validation passed
+      };
+      
+      // Perform validation
+      const validationError = isAutoScheduledMaghrib
+        ? null
+        : validatePrayerTimeOrder(prayer, time);
+      if (validationError) {
+        Alert.alert('Invalid Prayer Time', validationError);
+        return;
+      }
       
       // Get today's date in YYYY-MM-DD format
       const today = new Date().toISOString().split('T')[0];
@@ -473,12 +580,22 @@ export const AppProvider: React.FC<{children: ReactNode}> = ({children}) => {
       }
 
       // Use single prayer time update endpoint (simpler and more reliable)
-      await prayerTimeService.createOrUpdatePrayerTime({
+      const response = await prayerTimeService.createOrUpdatePrayerTime({
         masjidId,
         prayerName: normalizedPrayerName as 'Fajr' | 'Dhuhr' | 'Asr' | 'Maghrib' | 'Isha' | 'Jummah',
         prayerTime: time,
         effectiveDate: today,
       });
+
+      // The backend may replace a submitted time (notably auto-scheduled
+      // Maghrib) with the authoritative schedule value.
+      const serverPrayer = response.data;
+      const serverPrayerTime =
+        serverPrayer?.prayer_time || serverPrayer?.time || time;
+      const normalizedServerTime =
+        serverPrayerTime.length >= 5
+          ? serverPrayerTime.substring(0, 5)
+          : serverPrayerTime;
       
       // Update local state
       setPrayerTimes(prev => ({
@@ -490,10 +607,11 @@ export const AppProvider: React.FC<{children: ReactNode}> = ({children}) => {
             (p.prayer_name?.toLowerCase() === prayer.toLowerCase());
           return isMatch ? {
             ...p,
+            ...serverPrayer,
             prayer_name: normalizedPrayerName,
-            prayer_time: time,
+            prayer_time: normalizedServerTime,
             name: normalizedPrayerName, // Legacy format
-            time, // Legacy format
+            time: normalizedServerTime, // Legacy format
           } : p;
         }),
       }));
@@ -518,6 +636,7 @@ export const AppProvider: React.FC<{children: ReactNode}> = ({children}) => {
         // For other errors, show error alert
         Alert.alert('Error', getErrorMessage(error));
       }
+      throw error;
     }
   };
 
@@ -566,20 +685,24 @@ export const AppProvider: React.FC<{children: ReactNode}> = ({children}) => {
     }
   };
 
-  const replyToQuestion = async (questionId: string, reply: string): Promise<void> => {
+  const replyToQuestion = async (questionId: string, reply: string): Promise<boolean> => {
     try {
       // Find the question to get its masjid_id
       const question = questions.find(q => q.id === questionId);
       if (!question) {
         Alert.alert('Error', 'Question not found');
-        return;
+        return false;
       }
 
       // Ensure reply is trimmed and not empty
       const trimmedReply = reply.trim();
       if (!trimmedReply) {
         Alert.alert('Error', 'Reply cannot be empty');
-        return;
+        return false;
+      }
+      if (trimmedReply.length < 10) {
+        Alert.alert('Error', 'Reply must be at least 10 characters');
+        return false;
       }
 
       const response = await questionService.replyToQuestion(questionId, {reply: trimmedReply});
@@ -588,12 +711,13 @@ export const AppProvider: React.FC<{children: ReactNode}> = ({children}) => {
       setQuestions(prev =>
         prev.map(q =>
           q.id === questionId
-            ? {...q, status: 'replied' as const, reply}
+            ? {...q, status: 'replied' as const, reply: trimmedReply}
             : q,
         ),
       );
       
       // Success - no dialog box needed, UI will update automatically
+      return true;
     } catch (error: any) {
       // Extract detailed error message
       let errorMessage = getErrorMessage(error);
@@ -630,6 +754,7 @@ export const AppProvider: React.FC<{children: ReactNode}> = ({children}) => {
       }
       
       Alert.alert('Error', errorMessage);
+      return false;
     }
   };
 
@@ -673,7 +798,26 @@ export const AppProvider: React.FC<{children: ReactNode}> = ({children}) => {
           date: formatDate(createdAt),
         };
       });
-      setNotifications(notifs);
+      
+      // Deduplicate notifications by ID to prevent duplicates
+      setNotifications(prev => {
+        const existingIds = new Set(prev.map(n => n.id));
+        const newNotifs = notifs.filter(n => !existingIds.has(n.id));
+        // Merge with existing, keeping existing ones first, then new ones
+        // This prevents duplicates while preserving order
+        const merged = [...prev];
+        newNotifs.forEach(newNotif => {
+          if (!merged.find(n => n.id === newNotif.id)) {
+            merged.push(newNotif);
+          }
+        });
+        // Sort by created_at descending (newest first)
+        return merged.sort((a, b) => {
+          const dateA = new Date(a.created_at).getTime();
+          const dateB = new Date(b.created_at).getTime();
+          return dateB - dateA;
+        });
+      });
     } catch (error) {
       Alert.alert('Error', getErrorMessage(error));
       setNotifications([]);
@@ -724,7 +868,17 @@ export const AppProvider: React.FC<{children: ReactNode}> = ({children}) => {
         date: formatDate(response.data.created_at),
       };
       
-      setNotifications(prev => [newNotif, ...prev]);
+      // Add notification only if it doesn't already exist (deduplication)
+      setNotifications(prev => {
+        // Check if notification with this ID already exists
+        const exists = prev.some(n => n.id === newNotif.id);
+        if (exists) {
+          console.log('⚠️ Duplicate notification detected, skipping:', newNotif.id);
+          return prev; // Don't add duplicate
+        }
+        // Add new notification at the beginning (newest first)
+        return [newNotif, ...prev];
+      });
       
       if (showSuccessAlert) {
         Alert.alert('Success', 'Notification sent successfully');
@@ -773,6 +927,8 @@ export const AppProvider: React.FC<{children: ReactNode}> = ({children}) => {
         description: e.description || '',
         event_date: e.event_date,
         event_time: e.event_time || '',
+        event_type: e.event_type,
+        day_of_week: e.day_of_week,
         location: e.location,
         // Legacy format
         masjidId: e.masjid_id || masjidId,
@@ -790,7 +946,9 @@ export const AppProvider: React.FC<{children: ReactNode}> = ({children}) => {
     masjidId: string;
     name: string;
     description?: string;
-    date: string;
+    eventType?: 'one_time' | 'recurring';
+    dayOfWeek?: number;
+    date?: string;
     time: string;
     location?: string;
   }): Promise<void> => {
@@ -821,7 +979,9 @@ export const AppProvider: React.FC<{children: ReactNode}> = ({children}) => {
         masjidId: event.masjidId,
         name: event.name,
         description: event.description,
-        eventDate: convertDateFormat(event.date),
+        eventType: event.eventType,
+        dayOfWeek: event.dayOfWeek,
+        eventDate: event.date ? convertDateFormat(event.date) : undefined,
         eventTime: event.time,
         location: event.location,
       });
@@ -833,6 +993,8 @@ export const AppProvider: React.FC<{children: ReactNode}> = ({children}) => {
         description: response.data.description || '',
         event_date: response.data.event_date,
         event_time: response.data.event_time,
+        event_type: response.data.event_type,
+        day_of_week: response.data.day_of_week,
         location: response.data.location,
         // Legacy format
         masjidId: response.data.masjid_id || event.masjidId,
@@ -861,6 +1023,7 @@ export const AppProvider: React.FC<{children: ReactNode}> = ({children}) => {
         // For other errors, show error alert
         Alert.alert('Error', getErrorMessage(error));
       }
+      throw error;
     }
   };
 

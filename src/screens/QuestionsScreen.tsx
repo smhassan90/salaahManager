@@ -17,7 +17,9 @@ export const QuestionsScreen: React.FC = () => {
   const [selectedQuestion, setSelectedQuestion] = useState<Question | null>(null);
   const [replyText, setReplyText] = useState('');
   const [sendReplyButtonPressed, setSendReplyButtonPressed] = useState(false);
+  const [isReplying, setIsReplying] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
+  const isReplyTooShort = replyText.trim().length < 10;
 
   // Filter questions based on active tab
   const filteredQuestions = questions.filter(question => {
@@ -41,12 +43,30 @@ export const QuestionsScreen: React.FC = () => {
   };
 
   const handleSendReply = async () => {
-    if (selectedQuestion && replyText.trim()) {
-      await replyToQuestion(selectedQuestion.id, replyText.trim());
-      setReplyModalVisible(false);
-      setSelectedQuestion(null);
-      setReplyText('');
+    if (!selectedQuestion || isReplyTooShort || isReplying) {
+      return;
     }
+
+    setIsReplying(true);
+    try {
+      const success = await replyToQuestion(selectedQuestion.id, replyText.trim());
+      if (success) {
+        setReplyModalVisible(false);
+        setSelectedQuestion(null);
+        setReplyText('');
+      }
+    } finally {
+      setIsReplying(false);
+    }
+  };
+
+  const handleCloseReplyModal = () => {
+    if (isReplying) {
+      return;
+    }
+    setReplyModalVisible(false);
+    setSelectedQuestion(null);
+    setReplyText('');
   };
 
   const handleRefresh = async () => {
@@ -251,7 +271,7 @@ export const QuestionsScreen: React.FC = () => {
         visible={replyModalVisible}
         transparent
         animationType="fade"
-        onRequestClose={() => setReplyModalVisible(false)}>
+        onRequestClose={handleCloseReplyModal}>
         <View style={styles.modalOverlay}>
           <View style={styles.modalContent}>
             <AppText variant="semiBold" size="lg" style={styles.modalTitle}>
@@ -278,29 +298,39 @@ export const QuestionsScreen: React.FC = () => {
               value={replyText}
               onChangeText={setReplyText}
               multiline
+              editable={!isReplying}
             />
+            <AppText
+              size="xs"
+              color={isReplyTooShort ? theme.colors.error : theme.colors.textLight}
+              style={styles.replyLengthHint}>
+              {t('questions.replyMinLength')}
+            </AppText>
 
             <View style={styles.modalButtons}>
               <AppButton
                 title={t('common.cancel')}
-                onPress={() => setReplyModalVisible(false)}
+                onPress={handleCloseReplyModal}
                 variant="outline"
                 size="small"
                 style={styles.modalButton}
+                disabled={isReplying}
               />
               <TouchableOpacity
                 onPress={handleSendReply}
                 onPressIn={() => setSendReplyButtonPressed(true)}
                 onPressOut={() => setSendReplyButtonPressed(false)}
                 activeOpacity={1}
-                disabled={!replyText.trim()}
+                disabled={isReplyTooShort || isReplying}
                 style={[
                   styles.sendReplyButton,
-                  sendReplyButtonPressed && styles.sendReplyButtonPressed,
-                  !replyText.trim() && styles.sendReplyButtonDisabled
+                  sendReplyButtonPressed && !isReplying && styles.sendReplyButtonPressed,
+                  (isReplyTooShort || isReplying) && styles.sendReplyButtonDisabled
                 ]}>
                 <AppText variant="semiBold" size="sm" color={theme.colors.textWhite}>
-                  {t('questions.sendReply')}
+                  {isReplying
+                    ? t('questions.sendingReply') || 'Sending...'
+                    : t('questions.sendReply')}
                 </AppText>
               </TouchableOpacity>
             </View>
@@ -442,6 +472,9 @@ const styles = StyleSheet.create({
   questionPreviewText: {
     marginTop: theme.spacing.sm,
     color: theme.colors.textDark,
+  },
+  replyLengthHint: {
+    marginTop: -theme.spacing.sm,
   },
   modalButtons: {
     flexDirection: 'row',

@@ -8,7 +8,7 @@ import {AppText, AppButton, AppCard, AppHeader, AppTextInput} from '../component
 import {theme} from '../theme';
 import {useApp} from '../context';
 import {HomeStackParamList} from '../navigation/HomeStackNavigator';
-import {BottomTabParamList} from '../navigation/types';
+import {BottomTabParamList, RootStackParamList} from '../navigation/types';
 import {useTranslation, translatePrayerName} from '../i18n';
 
 interface HomeScreenProps {
@@ -19,6 +19,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({onLogout}) => {
   const {t} = useTranslation();
   const stackNavigation = useNavigation<StackNavigationProp<HomeStackParamList>>();
   const tabNavigation = stackNavigation.getParent<BottomTabNavigationProp<BottomTabParamList>>();
+  const rootNavigation = tabNavigation?.getParent<StackNavigationProp<RootStackParamList>>();
   const {defaultMasjid, prayerTimes, updatePrayerTime, user, questions, addNotification, addEvent, notifications, events, prayerTimePermissionError} = useApp();
   const [modalVisible, setModalVisible] = useState(false);
   const [logoutModalVisible, setLogoutModalVisible] = useState(false);
@@ -114,10 +115,11 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({onLogout}) => {
             // Send notification to all subscribers except the imam who made the change
             // (don't show success alert, we'll show combined message)
             const translatedPrayer = translatePrayerName(selectedPrayer);
+            const formattedTimeForNotification = formatTime(newTime);
             await addNotification({
               masjidId: defaultMasjid.id,
               title: t('home.prayerTimeNotificationTitle', {prayer: translatedPrayer}),
-              description: t('home.prayerTimeNotificationDescription', {prayer: translatedPrayer, time: newTime}),
+              description: t('home.prayerTimeNotificationDescription', {prayer: translatedPrayer, time: formattedTimeForNotification}),
               category: 'Prayer Times',
               excludeCreator: true, // Don't send notification to the imam who updated the time
             }, false); // Don't show success alert
@@ -178,6 +180,11 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({onLogout}) => {
   };
 
   const handleEventPress = () => {
+    if (defaultMasjid && rootNavigation) {
+      rootNavigation.navigate('AddEvent', {masjidId: defaultMasjid.id});
+      return;
+    }
+
     setEventName('');
     setEventDate('');
     setEventTime('');
@@ -294,22 +301,24 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({onLogout}) => {
     }
   };
 
-  // Format time from 24-hour (HH:MM) to 12-hour (HH:MM AM/PM)
+  // Normalize display values to 24-hour HH:MM.
   const formatTime = (timeStr: string): string => {
     if (!timeStr) return '';
     try {
-      // Check if already in 12-hour format (contains AM/PM)
-      if (/AM|PM/i.test(timeStr)) {
-        return timeStr;
+      const twelveHourMatch = timeStr.match(
+        /^(\d{1,2}):(\d{2})\s*(AM|PM)$/i,
+      );
+      if (twelveHourMatch) {
+        let hours = parseInt(twelveHourMatch[1], 10) % 12;
+        if (twelveHourMatch[3].toUpperCase() === 'PM') {
+          hours += 12;
+        }
+        return `${String(hours).padStart(2, '0')}:${twelveHourMatch[2]}`;
       }
-      // Convert from 24-hour to 12-hour format
+
       const parts = timeStr.split(':');
       if (parts.length >= 2) {
-        const hours = parseInt(parts[0], 10);
-        const minutes = parts[1];
-        const period = hours >= 12 ? 'PM' : 'AM';
-        const hours12 = hours === 0 ? 12 : hours > 12 ? hours - 12 : hours;
-        return `${hours12}:${minutes} ${period}`;
+        return `${parts[0].padStart(2, '0')}:${parts[1]}`;
       }
       return timeStr;
     } catch {
@@ -383,8 +392,18 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({onLogout}) => {
 
         {masjidPrayerTimes.map((prayer) => {
           const prayerName = prayer.name || prayer.prayer_name || '';
-          const prayerTime = prayer.time || prayer.prayer_time || '--:--';
+          const rawPrayerTime = prayer.time || prayer.prayer_time || '--:--';
+          const prayerTime = rawPrayerTime !== '--:--' ? formatTime(rawPrayerTime) : rawPrayerTime;
           const translatedPrayerName = translatePrayerName(prayerName);
+          const isAutoScheduledMaghrib =
+            prayerName.toLowerCase() === 'maghrib' &&
+            prayer.auto_scheduled === true;
+          const autoScheduleCity =
+            prayer.schedule_city ||
+            prayer.scheduled_city ||
+            prayer.source_city ||
+            defaultMasjid?.city ||
+            '';
           
           return (
             <View key={prayerName || prayer.id || Math.random()} style={styles.prayerCardWrapper}>
@@ -406,24 +425,36 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({onLogout}) => {
                       style={styles.prayerTime}>
                       {prayerTime}
                     </AppText>
+                    {isAutoScheduledMaghrib && (
+                      <AppText
+                        size="xs"
+                        color={theme.colors.textLight}
+                        style={styles.autoScheduleLabel}>
+                        {t('home.autoMaghrib', {
+                          city: autoScheduleCity || t('home.masjidCity'),
+                        })}
+                      </AppText>
+                    )}
                   </View>
-                  <TouchableOpacity
-                    onPress={() => handleEditPress(prayerName, prayerTime)}
-                    onPressIn={() => handleEditButtonPress(prayerName, true)}
-                    onPressOut={() => handleEditButtonPress(prayerName, false)}
-                    activeOpacity={1}
-                    style={[
-                      styles.editButton,
-                      editButtonPressed[prayerName] && styles.editButtonPressed
-                    ]}>
-                    <AppText 
-                      size="xs" 
-                      variant="semiBold"
-                      color={editButtonPressed[prayerName] ? theme.colors.textWhite : theme.colors.primary}
-                      style={styles.editButtonText}>
-                      {t('common.edit')}
-                    </AppText>
-                  </TouchableOpacity>
+                  {!isAutoScheduledMaghrib && (
+                    <TouchableOpacity
+                      onPress={() => handleEditPress(prayerName, rawPrayerTime)}
+                      onPressIn={() => handleEditButtonPress(prayerName, true)}
+                      onPressOut={() => handleEditButtonPress(prayerName, false)}
+                      activeOpacity={1}
+                      style={[
+                        styles.editButton,
+                        editButtonPressed[prayerName] && styles.editButtonPressed
+                      ]}>
+                      <AppText
+                        size="xs"
+                        variant="semiBold"
+                        color={editButtonPressed[prayerName] ? theme.colors.textWhite : theme.colors.primary}
+                        style={styles.editButtonText}>
+                        {t('common.edit')}
+                      </AppText>
+                    </TouchableOpacity>
+                  )}
                 </View>
               </AppCard>
             </View>
@@ -605,7 +636,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({onLogout}) => {
                 onPress={handleTimePickerPress}
                 style={styles.timePickerButton}>
                 <AppText size="md" color={newTime ? theme.colors.textDark : theme.colors.textLight}>
-                  {newTime || t('home.selectTime')}
+                  {newTime ? formatTime(newTime) : t('home.selectTime')}
                 </AppText>
                 <AppText size="lg">🕐</AppText>
               </TouchableOpacity>
@@ -1055,6 +1086,9 @@ const styles = StyleSheet.create({
   },
   prayerTime: {
     marginTop: 0,
+  },
+  autoScheduleLabel: {
+    marginTop: theme.spacing.xs,
   },
   editButton: {
     paddingHorizontal: theme.spacing.md,

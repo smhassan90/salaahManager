@@ -37,6 +37,10 @@ export interface PrayerTime {
   masjid_id?: string;
   prayer_name: string;
   prayer_time: string;
+  auto_scheduled?: boolean;
+  schedule_city?: string;
+  scheduled_city?: string;
+  source_city?: string;
   effective_date?: string;
   created_at?: string;
   updated_at?: string;
@@ -107,8 +111,10 @@ export interface Event {
   masjid_id: string;
   name: string;
   description: string;
-  event_date: string; // YYYY-MM-DD
+  event_date?: string; // YYYY-MM-DD
   event_time: string; // HH:MM
+  event_type?: 'one_time' | 'recurring';
+  day_of_week?: number; // 0=Sunday, 6=Saturday
   location?: string;
   created_at?: string;
   updated_at?: string;

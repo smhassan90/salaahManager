@@ -12,8 +12,7 @@ export * from './NotificationSettingsScreen';
 export * from './LanguageSettingsScreen';
 export * from './AboutScreen';
 
-// Commented out until needed:
-// export * from './MasjidDetailScreen';
-// export * from './SendNotificationScreen';
-// export * from './AddEventScreen';
+export * from './MasjidDetailScreen';
+export * from './SendNotificationScreen';
+export * from './AddEventScreen';
 

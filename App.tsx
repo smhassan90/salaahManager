@@ -26,12 +26,27 @@ function AppContent() {
 
     let isMounted = true;
     let initialNotificationChecked = false;
+    const processedMessageIds = new Set<string>(); // Track processed messages to prevent duplicates
 
     // Handle foreground messages
     const unsubscribeForeground = messaging().onMessage(async remoteMessage => {
       console.log('📬 Foreground notification received:', remoteMessage);
       
       if (!isMounted) return;
+      
+      // Deduplication: Check if we've already processed this message
+      const messageId = remoteMessage.messageId || `${remoteMessage.notification?.title}-${Date.now()}`;
+      if (processedMessageIds.has(messageId)) {
+        console.log('⚠️ Duplicate foreground message detected, skipping:', messageId);
+        return;
+      }
+      processedMessageIds.add(messageId);
+      
+      // Clean up old message IDs (keep only last 100)
+      if (processedMessageIds.size > 100) {
+        const idsArray = Array.from(processedMessageIds);
+        idsArray.slice(0, idsArray.length - 100).forEach(id => processedMessageIds.delete(id));
+      }
       
       // Show alert for foreground notifications
       if (remoteMessage.notification) {
@@ -55,6 +70,14 @@ function AppContent() {
     const unsubscribeOpened = messaging().onNotificationOpenedApp(remoteMessage => {
       console.log('📬 Notification opened app from background:', remoteMessage);
       if (!isMounted) return;
+      
+      // Deduplication: Check if we've already processed this message
+      const messageId = remoteMessage.messageId || `${remoteMessage.notification?.title}-${Date.now()}`;
+      if (processedMessageIds.has(messageId)) {
+        console.log('⚠️ Duplicate background message detected, skipping:', messageId);
+        return;
+      }
+      processedMessageIds.add(messageId);
       
       // Refresh notifications
       if (defaultMasjid) {

@@ -1,0 +1,28 @@
+﻿src/context/AppContext.tsx(228,51): error TS2345: Argument of type '(value: unknown) => void' is not assignable to parameter of type '() => void'.
+  Target signature provides too few arguments. Expected 1 or more, but got 0.
+src/i18n/config.ts(28,4): error TS2769: No overload matches this call.
+  Overload 1 of 2, '(callback?: Callback | undefined): Promise<TFunction<"translation", undefined>>', gave the following error.
+    Object literal may only specify known properties, and 'resources' does not exist in type 'Callback'.
+  Overload 2 of 2, '(options: InitOptions<unknown>, callback?: Callback | undefined): Promise<TFunction<"translation", undefined>>', gave the following error.
+    Type '"v3"' is not assignable to type '"v4"'.
+src/navigation/AppNavigator.tsx(8,3): error TS2305: Module '"../screens"' has no exported member 'MasjidDetailScreen'.
+src/navigation/AppNavigator.tsx(9,3): error TS2724: '"../screens"' has no exported member named 'SendNotificationScreen'. Did you mean 'NotificationsScreen'?
+src/navigation/AppNavigator.tsx(10,3): error TS2724: '"../screens"' has no exported member named 'AddEventScreen'. Did you mean 'EventsScreen'?
+src/navigation/AppNavigator.tsx(31,37): error TS2322: Type 'FC<SplashScreenProps>' is not assignable to type 'ScreenComponentType<RootStackParamList, "Splash"> | undefined'.
+  Type 'FunctionComponent<SplashScreenProps>' is not assignable to type 'FunctionComponent<{}>'.
+    Property 'onFinish' is missing in type '{}' but required in type 'SplashScreenProps'.
+src/navigation/AppNavigator.tsx(32,36): error TS2322: Type 'FC<LoginScreenProps>' is not assignable to type 'ScreenComponentType<RootStackParamList, "Login"> | undefined'.
+  Type 'FunctionComponent<LoginScreenProps>' is not assignable to type 'FunctionComponent<{}>'.
+    Property 'onLoginSuccess' is missing in type '{}' but required in type 'LoginScreenProps'.
+src/navigation/AppNavigator.tsx(33,35): error TS2322: Type 'FC<BottomTabNavigatorProps>' is not assignable to type 'ScreenComponentType<RootStackParamList, "Main"> | undefined'.
+  Type 'FunctionComponent<BottomTabNavigatorProps>' is not assignable to type 'FunctionComponent<{}>'.
+    Property 'onLogout' is missing in type '{}' but required in type 'BottomTabNavigatorProps'.
+src/screens/MasjidDetailScreen.tsx(87,48): error TS2769: No overload matches this call.
+  Argument of type '["Questions"]' is not assignable to parameter of type '[screen: "About"] | [screen: "About", params: undefined] | [screen: "Login"] | [screen: "Login", params: undefined] | [screen: "Splash"] | [screen: "Splash", params: undefined] | [screen: "Main", params: NavigatorScreenParams<BottomTabParamList>] | ... 8 more ... | [screen: ...]'.
+    Type '["Questions"]' is not assignable to type '[screen: "About"] | [screen: "Login"] | [screen: "Splash"] | [screen: "ChangePassword"] | [screen: "NotificationSettings"] | [screen: "LanguageSettings"]'.
+      Type '["Questions"]' is not assignable to type '[screen: "LanguageSettings"]'.
+        Type '"Questions"' is not assignable to type '"LanguageSettings"'.
+  Overload 2 of 2, '(options: { key: string; params?: undefined; merge?: boolean | undefined; } | { name: "About"; key?: string | undefined; params: undefined; merge?: boolean | undefined; } | { key: string; params?: undefined; merge?: boolean | undefined; } | ... 16 more ... | { ...; }): void', gave the following error.
+    Argument of type 'string' is not assignable to parameter of type '{ key: string; params?: undefined; merge?: boolean | undefined; } | { name: "About"; key?: string | undefined; params: undefined; merge?: boolean | undefined; } | { key: string; params?: undefined; merge?: boolean | undefined; } | ... 16 more ... | { ...; }'.
+src/screens/NotificationSettingsScreen.tsx(31,47): error TS2345: Argument of type '(value: unknown) => void' is not assignable to parameter of type '() => void'.
+  Target signature provides too few arguments. Expected 1 or more, but got 0.
