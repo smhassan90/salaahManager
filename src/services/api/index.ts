@@ -10,6 +10,7 @@ export * from './masjidService';
 export * from './prayerTimeService';
 export * from './questionService';
 export * from './eventService';
+export * from './activityLogService';
 export * from './notificationService';
 export * from './superAdminService';
 export * from './healthService';

@@ -1,6 +1,6 @@
-import React, {useState} from 'react';
+import React, {useCallback, useState} from 'react';
 import {View, StyleSheet, ScrollView, Modal, TouchableOpacity, Platform, Alert} from 'react-native';
-import {useNavigation} from '@react-navigation/native';
+import {useFocusEffect, useNavigation} from '@react-navigation/native';
 import {StackNavigationProp} from '@react-navigation/stack';
 import {BottomTabNavigationProp} from '@react-navigation/bottom-tabs';
 import DateTimePicker from '@react-native-community/datetimepicker';
@@ -10,6 +10,8 @@ import {useApp} from '../context';
 import {HomeStackParamList} from '../navigation/HomeStackNavigator';
 import {BottomTabParamList, RootStackParamList} from '../navigation/types';
 import {useTranslation, translatePrayerName} from '../i18n';
+import {prayerTimeService, activityLogService, formatRelativeTime} from '../services/api';
+import {ActivityLog} from '../types';
 
 interface HomeScreenProps {
   onLogout: () => void;
@@ -35,6 +37,8 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({onLogout}) => {
   const [eventPressed, setEventPressed] = useState(false);
   const [editButtonPressed, setEditButtonPressed] = useState<{[key: string]: boolean}>({});
   const [seeAllEventsPressed, setSeeAllEventsPressed] = useState(false);
+  const [seeAllLogsPressed, setSeeAllLogsPressed] = useState(false);
+  const [activityLogs, setActivityLogs] = useState<ActivityLog[]>([]);
   const [logoutButtonPressed, setLogoutButtonPressed] = useState(false);
   const [eventModalVisible, setEventModalVisible] = useState(false);
   const [eventName, setEventName] = useState('');
@@ -109,6 +113,10 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({onLogout}) => {
     if (defaultMasjid) {
       try {
         await updatePrayerTime(defaultMasjid.id, selectedPrayer, newTime);
+        await loadActivityLogs();
+        setTimeout(() => {
+          loadActivityLogs();
+        }, 800);
         
         if (notifyUsers) {
           try {
@@ -244,6 +252,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({onLogout}) => {
           time: eventTime.trim(),
           description: eventDescription.trim(),
         });
+        await loadActivityLogs();
         
         // Send notification if checkbox is checked
         if (sendEventAsNotification) {
@@ -301,30 +310,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({onLogout}) => {
     }
   };
 
-  // Normalize display values to 24-hour HH:MM.
-  const formatTime = (timeStr: string): string => {
-    if (!timeStr) return '';
-    try {
-      const twelveHourMatch = timeStr.match(
-        /^(\d{1,2}):(\d{2})\s*(AM|PM)$/i,
-      );
-      if (twelveHourMatch) {
-        let hours = parseInt(twelveHourMatch[1], 10) % 12;
-        if (twelveHourMatch[3].toUpperCase() === 'PM') {
-          hours += 12;
-        }
-        return `${String(hours).padStart(2, '0')}:${twelveHourMatch[2]}`;
-      }
-
-      const parts = timeStr.split(':');
-      if (parts.length >= 2) {
-        return `${parts[0].padStart(2, '0')}:${parts[1]}`;
-      }
-      return timeStr;
-    } catch {
-      return timeStr;
-    }
-  };
+  const formatTime = (timeStr: string): string => prayerTimeService.formatTime(timeStr);
 
   // Get last 3 events (sorted by date, most recent first)
   const lastThreeEvents = [...events]
@@ -343,6 +329,34 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({onLogout}) => {
       }, 100);
     }
   };
+
+  const loadActivityLogs = useCallback(async () => {
+    if (!defaultMasjid?.id) {
+      setActivityLogs([]);
+      return;
+    }
+    try {
+      const logs = await activityLogService.getMasjidLogs(defaultMasjid.id, {
+        page: 1,
+        limit: 20,
+      });
+      setActivityLogs(logs);
+    } catch (error) {
+      console.error('Failed to load activity logs:', error);
+    }
+  }, [defaultMasjid?.id]);
+
+  useFocusEffect(
+    useCallback(() => {
+      loadActivityLogs();
+    }, [loadActivityLogs]),
+  );
+
+  const handleSeeAllLogs = () => {
+    stackNavigation.navigate('ActivityLogs');
+  };
+
+  const previewLogs = activityLogs.slice(0, 3);
 
   return (
     <View style={styles.container}>
@@ -535,6 +549,69 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({onLogout}) => {
           )}
         </AppCard>
 
+        <AppText variant="semiBold" size="sm" style={styles.sectionTitle}>
+          {t('home.recentActivity')}
+        </AppText>
+
+        <AppCard padding="medium" shadow="small" style={styles.eventsContainer}>
+          {previewLogs.length > 0 ? (
+            <>
+              {previewLogs.map((log, index) => {
+                const isLastItem = index === previewLogs.length - 1;
+                return (
+                  <View key={log.id}>
+                    <View style={styles.eventItem}>
+                      <View style={styles.eventItemContent}>
+                        <AppText variant="semiBold" size="md" style={styles.eventItemName}>
+                          {log.message}
+                        </AppText>
+                        <AppText size="xs" color={theme.colors.textLight} style={styles.eventItemDescription}>
+                          {formatRelativeTime(log.created_at)}
+                          {log.user?.name ? ` • ${log.user.name}` : ''}
+                        </AppText>
+                      </View>
+                    </View>
+                    {!isLastItem && <View style={styles.eventDivider} />}
+                  </View>
+                );
+              })}
+              <TouchableOpacity
+                onPress={handleSeeAllLogs}
+                onPressIn={() => setSeeAllLogsPressed(true)}
+                onPressOut={() => setSeeAllLogsPressed(false)}
+                activeOpacity={1}
+                style={[
+                  styles.seeAllButton,
+                  seeAllLogsPressed && styles.seeAllButtonPressed,
+                ]}>
+                <AppText variant="medium" size="sm" color={theme.colors.textDark}>
+                  {t('home.seeAll')}
+                </AppText>
+              </TouchableOpacity>
+            </>
+          ) : (
+            <View style={styles.emptyEventsContainer}>
+              <AppText size="lg">📝</AppText>
+              <AppText variant="medium" size="sm" style={styles.emptyEventsText}>
+                {t('home.noActivity')}
+              </AppText>
+              <TouchableOpacity
+                onPress={handleSeeAllLogs}
+                onPressIn={() => setSeeAllLogsPressed(true)}
+                onPressOut={() => setSeeAllLogsPressed(false)}
+                activeOpacity={1}
+                style={[
+                  styles.seeAllButton,
+                  seeAllLogsPressed && styles.seeAllButtonPressed,
+                ]}>
+                <AppText variant="medium" size="sm" color={theme.colors.textDark}>
+                  {t('home.seeAll')}
+                </AppText>
+              </TouchableOpacity>
+            </View>
+          )}
+        </AppCard>
+
         {/* Quick Actions */}
         <AppText variant="semiBold" size="sm" style={styles.quickActionsTitle}>
           {t('home.quickActions')}
@@ -648,7 +725,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({onLogout}) => {
                 mode="time"
                 display={Platform.OS === 'ios' ? 'spinner' : 'default'}
                 onChange={handleTimeChange}
-                is24Hour={true}
+                is24Hour={false}
               />
             )}
 

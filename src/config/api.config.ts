@@ -75,6 +75,9 @@ export const API_ENDPOINTS = {
   QUESTION_STATISTICS: (masjidId: string) => `/questions/masjid/${masjidId}/statistics`,
   DELETE_QUESTION: (id: string) => `/questions/${id}`,
   
+  // Activity Logs
+  ACTIVITY_LOGS_BY_MASJID: (masjidId: string) => `/activity-logs/masjid/${masjidId}`,
+
   // Events
   CREATE_EVENT: '/events',
   EVENTS_BY_MASJID: (masjidId: string) => `/events/masjid/${masjidId}`,

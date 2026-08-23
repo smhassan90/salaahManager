@@ -81,7 +81,14 @@
     "prayerTimeNotificationTitle": "{{prayer}} Time Updated",
     "prayerTimeNotificationDescription": "{{prayer}} prayer time has been updated to {{time}}",
     "eventCreated": "Event Created",
-    "eventCreatedMessage": "Event was created successfully, but failed to send notification. You can send it manually later."
+    "eventCreatedMessage": "Event was created successfully, but failed to send notification. You can send it manually later.",
+    "recentActivity": "RECENT ACTIVITY",
+    "noActivity": "No activity in the last 7 days"
+  },
+  "logs": {
+    "title": "ACTIVITY LOGS",
+    "empty": "No activity yet",
+    "emptySubtext": "Prayer time changes, events, and answered questions from this masjid will appear here for 7 days."
   },
   "profile": {
     "title": "PROFILE",
@@ -89,6 +96,7 @@
     "changePasswordDescription": "Enter your current password and choose a new one",
     "notificationSettings": "Notifications Settings",
     "languageSettings": "Language Settings",
+    "activityLogs": "Activity Logs",
     "deleteAccount": "DELETE ACCOUNT",
     "confirmLogout": "Confirm Logout",
     "logoutMessage": "Are you sure you want to logout?",

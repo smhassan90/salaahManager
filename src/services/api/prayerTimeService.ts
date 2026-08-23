@@ -105,5 +105,39 @@ export const prayerTimeService = {
     );
     return response.data;
   },
+
+  /**
+   * Format stored 24-hour HH:MM for display as 12-hour AM/PM.
+   * Leaves empty and "--:--" values unchanged.
+   */
+  formatTime(time24: string): string {
+    if (!time24 || time24 === '--:--') {
+      return time24;
+    }
+
+    const twelveHourMatch = time24.match(/^(\d{1,2}):(\d{2})\s*(AM|PM)$/i);
+    if (twelveHourMatch) {
+      const hour = parseInt(twelveHourMatch[1], 10);
+      const minutes = twelveHourMatch[2];
+      const period = twelveHourMatch[3].toUpperCase();
+      const hour12 = hour % 12 || 12;
+      return `${hour12}:${minutes} ${period}`;
+    }
+
+    const match = time24.match(/^(\d{1,2}):(\d{2})(?::\d{2})?$/);
+    if (!match) {
+      return time24;
+    }
+
+    const hour24 = parseInt(match[1], 10);
+    const minutes = match[2];
+    if (!Number.isFinite(hour24) || hour24 < 0 || hour24 > 23) {
+      return time24;
+    }
+
+    const period = hour24 >= 12 ? 'PM' : 'AM';
+    const hour12 = hour24 % 12 || 12;
+    return `${hour12}:${minutes} ${period}`;
+  },
 };
 

@@ -6,6 +6,7 @@ import {RootStackParamList} from '../navigation/types';
 import {AppText, AppButton, AppCard, AppHeader} from '../components';
 import {theme} from '../theme';
 import {useApp} from '../context';
+import {prayerTimeService} from '../services/api';
 
 type MasjidDetailScreenNavigationProp = StackNavigationProp<
   RootStackParamList,
@@ -59,7 +60,7 @@ export const MasjidDetailScreen: React.FC = () => {
                 {prayer.name}
               </AppText>
               <AppText variant="semiBold" size="md" color={theme.colors.primary}>
-                {prayer.time}
+                {prayerTimeService.formatTime(prayer.time || prayer.prayer_time || '--:--')}
               </AppText>
             </View>
           ))}

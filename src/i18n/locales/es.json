@@ -79,13 +79,21 @@
     "prayerTimeNotificationTitle": "Hora de {{prayer}} Actualizada",
     "prayerTimeNotificationDescription": "La hora de oración {{prayer}} se ha actualizado a {{time}}",
     "eventCreated": "Evento Creado",
-    "eventCreatedMessage": "El evento se creó exitosamente, pero falló al enviar la notificación. Puedes enviarla manualmente más tarde."
+    "eventCreatedMessage": "El evento se creó exitosamente, pero falló al enviar la notificación. Puedes enviarla manualmente más tarde.",
+    "recentActivity": "ACTIVIDAD RECIENTE",
+    "noActivity": "No hay actividad en los últimos 7 días"
+  },
+  "logs": {
+    "title": "REGISTRO DE ACTIVIDAD",
+    "empty": "Aún no hay actividad",
+    "emptySubtext": "Los cambios de horarios, eventos y respuestas de esta mezquita aparecerán aquí durante 7 días."
   },
   "profile": {
     "title": "PERFIL",
     "changePassword": "Cambiar Contraseña",
     "notificationSettings": "Configuración de Notificaciones",
     "languageSettings": "Configuración de Idioma",
+    "activityLogs": "Registro de actividad",
     "deleteAccount": "ELIMINAR CUENTA",
     "confirmLogout": "Confirmar Cierre de Sesión",
     "logoutMessage": "¿Estás seguro de que deseas cerrar sesión?",

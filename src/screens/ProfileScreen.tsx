@@ -3,6 +3,7 @@ import {View, StyleSheet, ScrollView, Modal, TouchableOpacity, Alert, Linking, S
 import Icon from 'react-native-vector-icons/Ionicons';
 import {AppText, AppButton, AppCard, AppHeader, AppTextInput} from '../components';
 import {theme} from '../theme';
+import {useNavigation} from '@react-navigation/native';
 import {useApp} from '../context';
 import {userService} from '../services/api';
 import {getErrorMessage} from '../services/api/apiClient';
@@ -13,6 +14,7 @@ interface ProfileScreenProps {
 }
 
 export const ProfileScreen: React.FC<ProfileScreenProps> = ({onLogout}) => {
+  const navigation = useNavigation<any>();
   const {user, currentLanguage, changeLanguage} = useApp();
   const {t} = useTranslation();
   const [logoutModalVisible, setLogoutModalVisible] = useState(false);
@@ -229,6 +231,13 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({onLogout}) => {
           <AppButton
             title={t('profile.languageSettings')}
             onPress={handleLanguageSettingsPress}
+            variant="outline"
+            fullWidth
+            style={styles.settingButton}
+          />
+          <AppButton
+            title={t('profile.activityLogs')}
+            onPress={() => navigation.navigate('Home', {screen: 'ActivityLogs'})}
             variant="outline"
             fullWidth
             style={styles.settingButton}
@@ -595,7 +604,7 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({onLogout}) => {
                 {t('about.version')}
               </AppText>
               <AppText size="md" variant="medium">
-                1.5
+                1.6
               </AppText>
             </View>
 

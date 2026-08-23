@@ -3,11 +3,13 @@ import {createStackNavigator} from '@react-navigation/stack';
 import {HomeScreen} from '../screens/HomeScreen';
 import {NotificationsScreen} from '../screens/NotificationsScreen';
 import {EventsScreen} from '../screens/EventsScreen';
+import {ActivityLogsScreen} from '../screens/ActivityLogsScreen';
 
 export type HomeStackParamList = {
   HomeMain: undefined;
   Notifications: undefined;
   Events: undefined;
+  ActivityLogs: undefined;
 };
 
 const Stack = createStackNavigator<HomeStackParamList>();
@@ -27,6 +29,7 @@ export const HomeStackNavigator: React.FC<HomeStackNavigatorProps> = ({onLogout}
       </Stack.Screen>
       <Stack.Screen name="Notifications" component={NotificationsScreen} />
       <Stack.Screen name="Events" component={EventsScreen} />
+      <Stack.Screen name="ActivityLogs" component={ActivityLogsScreen} />
     </Stack.Navigator>
   );
 };

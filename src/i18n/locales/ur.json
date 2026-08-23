@@ -79,13 +79,21 @@
     "prayerTimeNotificationTitle": "{{prayer}} کا وقت اپ ڈیٹ ہو گیا",
     "prayerTimeNotificationDescription": "{{prayer}} کا وقت {{time}} پر اپ ڈیٹ ہو گیا ہے",
     "eventCreated": "تقریب بنائی گئی",
-    "eventCreatedMessage": "تقریب کامیابی سے بنائی گئی، لیکن اطلاع بھیجنے میں ناکام رہا۔ آپ بعد میں دستی طور پر بھیج سکتے ہیں۔"
+    "eventCreatedMessage": "تقریب کامیابی سے بنائی گئی، لیکن اطلاع بھیجنے میں ناکام رہا۔ آپ بعد میں دستی طور پر بھیج سکتے ہیں۔",
+    "recentActivity": "حالیہ سرگرمی",
+    "noActivity": "گزشتہ 7 دنوں میں کوئی سرگرمی نہیں"
+  },
+  "logs": {
+    "title": "سرگرمی لاگز",
+    "empty": "ابھی کوئی سرگرمی نہیں",
+    "emptySubtext": "نماز کے اوقات، تقریبات اور جواب دیے گئے سوالات یہاں 7 دن تک نظر آئیں گے۔"
   },
   "profile": {
     "title": "پروفائل",
     "changePassword": "پاس ورڈ تبدیل کریں",
     "notificationSettings": "اطلاعات کی ترتیبات",
     "languageSettings": "زبان کی ترتیبات",
+    "activityLogs": "سرگرمی لاگز",
     "deleteAccount": "اکاؤنٹ حذف کریں",
     "confirmLogout": "لاگ آؤٹ کی تصدیق",
     "logoutMessage": "کیا آپ واقعی لاگ آؤٹ کرنا چاہتے ہیں؟",

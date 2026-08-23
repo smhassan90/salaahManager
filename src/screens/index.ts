@@ -7,6 +7,7 @@ export * from './MyMasajidsScreen';
 export * from './ProfileScreen';
 export * from './NotificationsScreen';
 export * from './EventsScreen';
+export * from './ActivityLogsScreen';
 export * from './ChangePasswordScreen';
 export * from './NotificationSettingsScreen';
 export * from './LanguageSettingsScreen';

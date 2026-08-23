@@ -135,3 +135,26 @@ export interface Event {
   time?: string;
 }
 
+export type ActivityLogAction =
+  | 'prayer_time_updated'
+  | 'event_created'
+  | 'question_answered';
+
+export interface ActivityLog {
+  id: string;
+  masjid_id: string;
+  user_id?: string | null;
+  action: ActivityLogAction | string;
+  message: string;
+  metadata?: Record<string, any> | null;
+  created_at: string;
+  user?: {
+    id: string;
+    name: string;
+  } | null;
+  masjid?: {
+    id: string;
+    name: string;
+  } | null;
+}
+

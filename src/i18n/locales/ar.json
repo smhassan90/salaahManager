@@ -79,13 +79,21 @@
     "prayerTimeNotificationTitle": "تم تحديث وقت {{prayer}}",
     "prayerTimeNotificationDescription": "تم تحديث وقت صلاة {{prayer}} إلى {{time}}",
     "eventCreated": "تم إنشاء الحدث",
-    "eventCreatedMessage": "تم إنشاء الحدث بنجاح، لكن فشل إرسال الإشعار. يمكنك إرساله يدوياً لاحقاً."
+    "eventCreatedMessage": "تم إنشاء الحدث بنجاح، لكن فشل إرسال الإشعار. يمكنك إرساله يدوياً لاحقاً.",
+    "recentActivity": "النشاط الأخير",
+    "noActivity": "لا يوجد نشاط خلال آخر 7 أيام"
+  },
+  "logs": {
+    "title": "سجل النشاط",
+    "empty": "لا يوجد نشاط بعد",
+    "emptySubtext": "تظهر هنا تغييرات أوقات الصلاة والأحداث وإجابات الأسئلة لهذا المسجد لمدة 7 أيام."
   },
   "profile": {
     "title": "الملف الشخصي",
     "changePassword": "تغيير كلمة المرور",
     "notificationSettings": "إعدادات الإشعارات",
     "languageSettings": "إعدادات اللغة",
+    "activityLogs": "سجل النشاط",
     "deleteAccount": "حذف الحساب",
     "confirmLogout": "تأكيد تسجيل الخروج",
     "logoutMessage": "هل أنت متأكد أنك تريد تسجيل الخروج؟",
