@@ -595,7 +595,7 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({onLogout}) => {
                 {t('about.version')}
               </AppText>
               <AppText size="md" variant="medium">
-                1.0.0
+                1.5
               </AppText>
             </View>
 
