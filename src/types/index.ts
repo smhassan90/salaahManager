@@ -15,6 +15,7 @@ export interface Masjid {
   name: string;
   location: string;
   address?: string;
+  area?: string;
   city?: string;
   state?: string;
   country?: string;

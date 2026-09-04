@@ -38,6 +38,8 @@ export interface UserMasjid {
   masjidId: string;
   name: string;
   location: string;
+  address?: string;
+  area?: string;
   city: string;
   roles: string[];
   isDefault: boolean;

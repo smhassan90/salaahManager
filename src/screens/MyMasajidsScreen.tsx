@@ -6,6 +6,22 @@ import {useApp} from '../context';
 import {Masjid} from '../types';
 import {useTranslation} from '../i18n';
 
+const looksLikeCoordinates = (value?: string) =>
+  !!value && /^-?\d+(\.\d+)?\s*,\s*-?\d+(\.\d+)?$/.test(value.trim());
+
+const masjidPlaceLabel = (masjid: Masjid): string => {
+  const parts = [masjid.address, masjid.area]
+    .map(part => (part || '').trim())
+    .filter(Boolean);
+  if (parts.length) {
+    return parts.join(' · ');
+  }
+  if (masjid.location && !looksLikeCoordinates(masjid.location)) {
+    return masjid.location.trim();
+  }
+  return [masjid.city, masjid.state].filter(Boolean).join(', ');
+};
+
 export const MyMasajidsScreen: React.FC = () => {
   const {t} = useTranslation();
   const {masajids, setDefaultMasjid} = useApp();
@@ -25,7 +41,9 @@ export const MyMasajidsScreen: React.FC = () => {
     }
   };
 
-  const renderMasjid = ({item}: {item: Masjid}) => (
+  const renderMasjid = ({item}: {item: Masjid}) => {
+    const placeLabel = masjidPlaceLabel(item);
+    return (
     <TouchableOpacity
       activeOpacity={0.85}
       disabled={savingDefault || item.isDefault}
@@ -39,9 +57,11 @@ export const MyMasajidsScreen: React.FC = () => {
             <AppText variant="semiBold" size="lg">
               {item.name}
             </AppText>
-            <AppText size="sm" color={theme.colors.textDark} style={styles.location}>
-              📍 {item.location}
-            </AppText>
+            {!!placeLabel && (
+              <AppText size="sm" color={theme.colors.textDark} style={styles.location}>
+                📍 {placeLabel}
+              </AppText>
+            )}
           </View>
           <View style={[styles.radio, item.isDefault && styles.radioActive]}>
             {item.isDefault ? <View style={styles.radioDot} /> : null}
@@ -71,7 +91,8 @@ export const MyMasajidsScreen: React.FC = () => {
         )}
       </AppCard>
     </TouchableOpacity>
-  );
+    );
+  };
 
   return (
     <View style={styles.container}>

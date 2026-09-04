@@ -260,6 +260,8 @@ export const AppProvider: React.FC<{children: ReactNode}> = ({children}) => {
         id: um.masjidId || (um as any).masjid_id,
         name: um.name,
         location: um.location,
+        address: um.address,
+        area: um.area,
         city: um.city,
         isDefault: asBool(um.isDefault) || asBool((um as any).is_default),
       }));
@@ -325,8 +327,6 @@ export const AppProvider: React.FC<{children: ReactNode}> = ({children}) => {
         fetchNotifications(masjidId),
         fetchEvents(masjidId),
       ]);
-
-      Alert.alert('Success', 'Default masjid updated successfully');
     } catch (error) {
       setMasajids(prev =>
         prev.map(m => ({
@@ -918,7 +918,8 @@ export const AppProvider: React.FC<{children: ReactNode}> = ({children}) => {
   const fetchEvents = async (masjidId: string): Promise<void> => {
     try {
       const response = await eventService.getUpcomingEvents(masjidId);
-      const evs: Event[] = response.data.map(e => ({
+      const rows = Array.isArray(response?.data) ? response.data : [];
+      const evs: Event[] = rows.map(e => ({
         id: e.id,
         masjid_id: e.masjid_id || masjidId,
         name: e.name,
@@ -935,7 +936,6 @@ export const AppProvider: React.FC<{children: ReactNode}> = ({children}) => {
       }));
       setEvents(evs);
     } catch (error) {
-      Alert.alert('Error', getErrorMessage(error));
       setEvents([]);
     }
   };
