@@ -11,7 +11,8 @@ import {SafeAreaProvider} from 'react-native-safe-area-context';
 import messaging from '@react-native-firebase/messaging';
 import {AppProvider, useApp} from './src/context';
 import {SplashScreen, LoginScreen} from './src/screens';
-import {BottomTabNavigator} from './src/navigation/BottomTabNavigator';
+import {MainStackNavigator} from './src/navigation/MainStackNavigator';
+import {navigationRef} from './src/navigation/navigationRef';
 import './src/i18n/config'; // Initialize i18n
 
 type Screen = 'splash' | 'login' | 'home';
@@ -143,8 +144,8 @@ function AppContent() {
 
   // Home screen with bottom tabs
   return (
-    <NavigationContainer>
-      <BottomTabNavigator onLogout={handleLogout} />
+    <NavigationContainer ref={navigationRef}>
+      <MainStackNavigator onLogout={handleLogout} />
     </NavigationContainer>
   );
 }

@@ -132,7 +132,9 @@
     "title": "مساجدي",
     "viewDetails": "عرض التفاصيل",
     "setDefault": "تعيين الافتراضي",
-    "default": "افتراضي"
+    "default": "افتراضي",
+    "currentlyActive": "المحددة حاليا",
+    "switchToThis": "التبديل إلى هذا المسجد"
   },
   "notifications": {
     "title": "الإشعارات",

@@ -8,7 +8,8 @@ import {AppText, AppButton, AppCard, AppHeader, AppTextInput} from '../component
 import {theme} from '../theme';
 import {useApp} from '../context';
 import {HomeStackParamList} from '../navigation/HomeStackNavigator';
-import {BottomTabParamList, RootStackParamList} from '../navigation/types';
+import {navigationRef, openActivityLogs} from '../navigation/navigationRef';
+import {BottomTabParamList, MainStackParamList, RootStackParamList} from '../navigation/types';
 import {useTranslation, translatePrayerName} from '../i18n';
 import {prayerTimeService, activityLogService, formatRelativeTime} from '../services/api';
 import {ActivityLog} from '../types';
@@ -28,7 +29,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({onLogout}) => {
   const [notificationModalVisible, setNotificationModalVisible] = useState(false);
   const [selectedPrayer, setSelectedPrayer] = useState('');
   const [newTime, setNewTime] = useState('');
-  const [notifyUsers, setNotifyUsers] = useState(false);
+  const [notifyUsers, setNotifyUsers] = useState(true);
   const [notificationCategory, setNotificationCategory] = useState('General');
   const [notificationTitle, setNotificationTitle] = useState('');
   const [notificationDescription, setNotificationDescription] = useState('');
@@ -66,7 +67,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({onLogout}) => {
   const handleEditPress = (prayerName: string, currentTime: string) => {
     setSelectedPrayer(prayerName);
     setNewTime(currentTime);
-    setNotifyUsers(false); // Reset checkbox
+    setNotifyUsers(true);
     setShowTimePicker(false);
     
     // Parse current time and set selectedTime for picker
@@ -112,42 +113,16 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({onLogout}) => {
   const handleSaveTime = async () => {
     if (defaultMasjid) {
       try {
-        await updatePrayerTime(defaultMasjid.id, selectedPrayer, newTime);
+        await updatePrayerTime(defaultMasjid.id, selectedPrayer, newTime, notifyUsers);
         await loadActivityLogs();
         setTimeout(() => {
           loadActivityLogs();
         }, 800);
-        
-        if (notifyUsers) {
-          try {
-            // Send notification to all subscribers except the imam who made the change
-            // (don't show success alert, we'll show combined message)
-            const translatedPrayer = translatePrayerName(selectedPrayer);
-            const formattedTimeForNotification = formatTime(newTime);
-            await addNotification({
-              masjidId: defaultMasjid.id,
-              title: t('home.prayerTimeNotificationTitle', {prayer: translatedPrayer}),
-              description: t('home.prayerTimeNotificationDescription', {prayer: translatedPrayer, time: formattedTimeForNotification}),
-              category: 'Prayer Times',
-              excludeCreator: true, // Don't send notification to the imam who updated the time
-            }, false); // Don't show success alert
-          } catch (notificationError) {
-            // Prayer time was updated successfully, but notification failed
-            // Don't prevent the modal from closing - just show a warning
-            console.error('Notification error:', notificationError);
-            Alert.alert(
-              t('home.prayerTimeUpdated'),
-              t('home.prayerTimeUpdatedMessage'),
-              [{text: t('common.ok')}]
-            );
-          }
-        }
-        
+
         setModalVisible(false);
-        setNotifyUsers(false); // Reset for next time
+        setNotifyUsers(true);
         setShowTimePicker(false);
       } catch (error) {
-        // Error already handled in updatePrayerTime
         // Error already handled in updatePrayerTime
       }
     }
@@ -188,21 +163,21 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({onLogout}) => {
   };
 
   const handleEventPress = () => {
-    if (defaultMasjid && rootNavigation) {
-      rootNavigation.navigate('AddEvent', {masjidId: defaultMasjid.id});
+    if (!defaultMasjid) {
+      Alert.alert('Error', 'Please select a masjid first');
       return;
     }
 
-    setEventName('');
-    setEventDate('');
-    setEventTime('');
-    setEventDescription('');
-    setSelectedDate(new Date());
-    setSelectedEventTime(new Date());
-    setShowDatePicker(false);
-    setShowEventTimePicker(false);
-    setSendEventAsNotification(false);
-    setEventModalVisible(true);
+    if (navigationRef.isReady()) {
+      navigationRef.navigate('AddEvent', {masjidId: defaultMasjid.id});
+      return;
+    }
+
+    if (rootNavigation) {
+      rootNavigation.navigate('AddEvent' as keyof MainStackParamList, {
+        masjidId: defaultMasjid.id,
+      });
+    }
   };
 
   const handleEventTimePickerPress = () => {
@@ -353,7 +328,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({onLogout}) => {
   );
 
   const handleSeeAllLogs = () => {
-    stackNavigation.navigate('ActivityLogs');
+    openActivityLogs();
   };
 
   const previewLogs = activityLogs.slice(0, 3);
@@ -1028,6 +1003,7 @@ const styles = StyleSheet.create({
   },
   scrollContent: {
     padding: theme.spacing.md,
+    paddingBottom: 110,
   },
   welcomeCard: {
     backgroundColor: theme.colors.backgroundLight,

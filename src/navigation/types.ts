@@ -1,4 +1,5 @@
 import {NavigatorScreenParams} from '@react-navigation/native';
+import {HomeStackParamList} from './HomeStackNavigator';
 
 export type RootStackParamList = {
   Splash: undefined;
@@ -11,10 +12,17 @@ export type RootStackParamList = {
   NotificationSettings: undefined;
   LanguageSettings: undefined;
   About: undefined;
+  ActivityLogs: undefined;
+};
+
+export type MainStackParamList = {
+  Main: NavigatorScreenParams<BottomTabParamList> | undefined;
+  ActivityLogs: undefined;
+  AddEvent: {masjidId: string};
 };
 
 export type BottomTabParamList = {
-  Home: undefined;
+  Home: NavigatorScreenParams<HomeStackParamList> | undefined;
   Questions: undefined;
   MyMasajids: undefined;
   Notifications: undefined;

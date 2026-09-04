@@ -12,6 +12,7 @@ import {
   NotificationSettingsScreen,
   LanguageSettingsScreen,
   AboutScreen,
+  ActivityLogsScreen,
 } from '../screens';
 import {BottomTabNavigator} from './BottomTabNavigator';
 
@@ -41,6 +42,7 @@ export const AppNavigator: React.FC = () => {
         <Stack.Screen name="NotificationSettings" component={NotificationSettingsScreen} />
         <Stack.Screen name="LanguageSettings" component={LanguageSettingsScreen} />
         <Stack.Screen name="About" component={AboutScreen} />
+        <Stack.Screen name="ActivityLogs" component={ActivityLogsScreen} />
       </Stack.Navigator>
     </NavigationContainer>
   );

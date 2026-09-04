@@ -46,6 +46,15 @@ function extractLogs(payload: unknown): ActivityLog[] {
     if (Array.isArray(body.logs)) {
       return body.logs as ActivityLog[];
     }
+    if (body.data && typeof body.data === 'object') {
+      const nested = body.data as {data?: unknown; logs?: unknown};
+      if (Array.isArray(nested.data)) {
+        return nested.data as ActivityLog[];
+      }
+      if (Array.isArray(nested.logs)) {
+        return nested.logs as ActivityLog[];
+      }
+    }
   }
   return [];
 }

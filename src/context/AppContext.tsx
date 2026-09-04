@@ -44,7 +44,7 @@ interface AppContextType {
   fetchUserMasajids: () => Promise<void>;
   setDefaultMasjid: (masjidId: string) => Promise<void>;
   fetchPrayerTimes: (masjidId: string) => Promise<void>;
-  updatePrayerTime: (masjidId: string, prayer: string, time: string) => Promise<void>;
+  updatePrayerTime: (masjidId: string, prayer: string, time: string, notifyUsers?: boolean) => Promise<void>;
   fetchQuestions: (masjidId: string) => Promise<void>;
   replyToQuestion: (questionId: string, reply: string) => Promise<boolean>;
   fetchNotifications: (masjidId: string) => Promise<void>;
@@ -254,36 +254,38 @@ export const AppProvider: React.FC<{children: ReactNode}> = ({children}) => {
       const response = await userService.getMyMasajids();
       
       // Map masajids
+      const asBool = (value: unknown) =>
+        value === true || value === 1 || value === '1' || value === 'true';
       let userMasajids: Masjid[] = response.data.map(um => ({
-        id: um.masjidId,
+        id: um.masjidId || (um as any).masjid_id,
         name: um.name,
         location: um.location,
         city: um.city,
-        isDefault: um.isDefault,
+        isDefault: asBool(um.isDefault) || asBool((um as any).is_default),
       }));
-      
-      // If no default masjid is set, set the first one as default
-      const hasDefault = userMasajids.some(m => m.isDefault);
-      if (!hasDefault && userMasajids.length > 0) {
-        // Set first masjid as default
-        const firstMasjidId = userMasajids[0].id;
-        
-        try {
-          // Update on backend
-          await masjidService.setDefaultMasjid(firstMasjidId);
-          
-          // Update local state
-          userMasajids = userMasajids.map(m => ({
-            ...m,
-            isDefault: m.id === firstMasjidId,
-          }));
-        } catch (error) {
-          Alert.alert('Error', getErrorMessage(error));
-          // Continue anyway - update local state
-          userMasajids = userMasajids.map(m => ({
-            ...m,
-            isDefault: m.id === firstMasjidId,
-          }));
+
+      const storedDefaultId = await storage.getDefaultMasjid();
+      const defaultIds = userMasajids.filter(m => m.isDefault).map(m => m.id);
+      const chosenDefaultId =
+        (storedDefaultId && userMasajids.some(m => m.id === storedDefaultId)
+          ? storedDefaultId
+          : null) ||
+        (defaultIds.length === 1 ? defaultIds[0] : null) ||
+        userMasajids[0]?.id;
+
+      if (chosenDefaultId) {
+        const needsRepair =
+          defaultIds.length !== 1 || defaultIds[0] !== chosenDefaultId;
+        userMasajids = userMasajids.map(m => ({
+          ...m,
+          isDefault: m.id === chosenDefaultId,
+        }));
+        if (needsRepair) {
+          try {
+            await masjidService.setDefaultMasjid(chosenDefaultId);
+          } catch (error) {
+            Alert.alert('Error', getErrorMessage(error));
+          }
         }
       }
       
@@ -306,40 +308,34 @@ export const AppProvider: React.FC<{children: ReactNode}> = ({children}) => {
   };
 
   const setDefaultMasjid = async (masjidId: string): Promise<void> => {
+    const previousDefaultId = masajids.find(m => m.isDefault)?.id;
     try {
-      // Update local state immediately for better UX
       setMasajids(prev =>
         prev.map(m => ({
           ...m,
           isDefault: m.id === masjidId,
         })),
       );
-      
-      // Update on backend
+
       await masjidService.setDefaultMasjid(masjidId);
-      
-      // Fetch data for new default masjid
+
       await Promise.all([
         fetchPrayerTimes(masjidId),
         fetchQuestions(masjidId),
         fetchNotifications(masjidId),
         fetchEvents(masjidId),
       ]);
-      
+
       Alert.alert('Success', 'Default masjid updated successfully');
     } catch (error) {
-      // Revert local state on error
-      setMasajids(prev => {
-        const defaultMasjid = prev.find(m => m.isDefault);
-        if (defaultMasjid) {
-          return prev.map(m => ({
-            ...m,
-            isDefault: m.id === defaultMasjid.id,
-          }));
-        }
-        return prev;
-      });
+      setMasajids(prev =>
+        prev.map(m => ({
+          ...m,
+          isDefault: previousDefaultId ? m.id === previousDefaultId : m.isDefault,
+        })),
+      );
       Alert.alert('Error', getErrorMessage(error));
+      throw error;
     }
   };
 
@@ -430,6 +426,7 @@ export const AppProvider: React.FC<{children: ReactNode}> = ({children}) => {
     masjidId: string,
     prayer: string,
     time: string,
+    notifyUsers: boolean = false,
   ): Promise<void> => {
     try {
       // Reset permission error state
@@ -585,6 +582,7 @@ export const AppProvider: React.FC<{children: ReactNode}> = ({children}) => {
         prayerName: normalizedPrayerName as 'Fajr' | 'Dhuhr' | 'Asr' | 'Maghrib' | 'Isha' | 'Jummah',
         prayerTime: time,
         effectiveDate: today,
+        notifyUsers: notifyUsers === true,
       });
 
       // The backend may replace a submitted time (notably auto-scheduled
@@ -999,7 +997,7 @@ export const AppProvider: React.FC<{children: ReactNode}> = ({children}) => {
         // Legacy format
         masjidId: response.data.masjid_id || event.masjidId,
         date: response.data.event_date,
-        time: response.data.event_time.substring(0, 5),
+        time: (response.data.event_time || event.time || '').toString().substring(0, 5),
       };
       
       setEvents(prev => [newEvent, ...prev]);
@@ -1016,12 +1014,7 @@ export const AppProvider: React.FC<{children: ReactNode}> = ({children}) => {
         errorMessage.toLowerCase().includes('can_create_events');
       
       if (isPermissionError) {
-        // Permission errors are expected - set state to show message on screen
         setEventPermissionError(true);
-        // Message will remain on screen until user successfully creates an event or logs out
-      } else {
-        // For other errors, show error alert
-        Alert.alert('Error', getErrorMessage(error));
       }
       throw error;
     }

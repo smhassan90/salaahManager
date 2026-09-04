@@ -149,7 +149,9 @@
     "title": "MY MASAJIDS",
     "viewDetails": "VIEW DETAILS",
     "setDefault": "SET DEFAULT",
-    "default": "DEFAULT"
+    "default": "DEFAULT",
+    "currentlyActive": "CURRENTLY ACTIVE",
+    "switchToThis": "SWITCH TO THIS MASJID"
   },
   "notifications": {
     "title": "NOTIFICATIONS",

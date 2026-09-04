@@ -132,7 +132,9 @@
     "title": "میری مساجد",
     "viewDetails": "تفصیلات دیکھیں",
     "setDefault": "ڈیفالٹ مقرر کریں",
-    "default": "ڈیفالٹ"
+    "default": "ڈیفالٹ",
+    "currentlyActive": "فی الحال منتخب",
+    "switchToThis": "اس مسجد پر سوئچ کریں"
   },
   "notifications": {
     "title": "اطلاعات",

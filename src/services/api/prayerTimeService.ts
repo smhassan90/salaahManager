@@ -12,6 +12,7 @@ export interface CreatePrayerTimeRequest {
   prayerName: 'Fajr' | 'Dhuhr' | 'Asr' | 'Maghrib' | 'Isha' | 'Jummah';
   prayerTime: string; // HH:MM
   effectiveDate: string; // YYYY-MM-DD
+  notifyUsers?: boolean;
 }
 
 export interface BulkUpdatePrayerTimesRequest {

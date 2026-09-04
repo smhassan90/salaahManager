@@ -132,7 +132,9 @@
     "title": "MIS MEZQUITAS",
     "viewDetails": "VER DETALLES",
     "setDefault": "ESTABLECER PREDETERMINADA",
-    "default": "PREDETERMINADA"
+    "default": "PREDETERMINADA",
+    "currentlyActive": "ACTIVA AHORA",
+    "switchToThis": "CAMBIAR A ESTA MEZQUITA"
   },
   "notifications": {
     "title": "NOTIFICACIONES",

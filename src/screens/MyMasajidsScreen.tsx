@@ -1,5 +1,5 @@
 import React, {useState} from 'react';
-import {View, StyleSheet, FlatList, TouchableOpacity, Alert} from 'react-native';
+import {View, StyleSheet, FlatList, TouchableOpacity} from 'react-native';
 import {AppText, AppCard, AppHeader} from '../components';
 import {theme} from '../theme';
 import {useApp} from '../context';
@@ -9,91 +9,68 @@ import {useTranslation} from '../i18n';
 export const MyMasajidsScreen: React.FC = () => {
   const {t} = useTranslation();
   const {masajids, setDefaultMasjid} = useApp();
-  const [viewDetailsPressed, setViewDetailsPressed] = useState<{[key: string]: boolean}>({});
-  const [defaultButtonPressed, setDefaultButtonPressed] = useState<{[key: string]: boolean}>({});
+  const [savingDefault, setSavingDefault] = useState(false);
 
-  const handleViewDetails = (masjid: Masjid) => {
-    Alert.alert(
-      masjid.name,
-      `${t('common.location')}: ${masjid.location || 'N/A'}`,
-      [{text: t('common.ok')}]
-    );
-  };
-
-  const handleSetDefault = async (masjidId: string) => {
+  const handleSwitchMasjid = async (masjid: Masjid) => {
+    if (savingDefault || masjid.isDefault) {
+      return;
+    }
+    setSavingDefault(true);
     try {
-      await setDefaultMasjid(masjidId);
+      await setDefaultMasjid(masjid.id);
     } catch (error) {
       // Error already handled in setDefaultMasjid
-      // Error setting default masjid - already handled by AppContext
+    } finally {
+      setSavingDefault(false);
     }
   };
 
   const renderMasjid = ({item}: {item: Masjid}) => (
-    <AppCard padding="medium" shadow="small" style={styles.masjidCard}>
-      <View style={styles.masjidHeader}>
-        <View style={styles.masjidInfo}>
-          <AppText variant="semiBold" size="lg">
-            {item.name}
-          </AppText>
-          <AppText size="sm" color={theme.colors.textDark} style={styles.location}>
-            📍 {item.location}
-          </AppText>
-        </View>
-      </View>
-
-      <View style={styles.actionsRow}>
-        <TouchableOpacity
-          onPress={() => handleViewDetails(item)}
-          onPressIn={() => setViewDetailsPressed({...viewDetailsPressed, [item.id]: true})}
-          onPressOut={() => setViewDetailsPressed({...viewDetailsPressed, [item.id]: false})}
-          activeOpacity={1}
-          style={[
-            styles.viewDetailsButton,
-            viewDetailsPressed[item.id] && styles.viewDetailsButtonPressed
-          ]}>
-          <AppText 
-            size="xs" 
-            variant="semiBold"
-            color={viewDetailsPressed[item.id] ? theme.colors.textWhite : theme.colors.primary}
-            style={styles.viewDetailsText}>
-            {t('masajids.viewDetails')}
-          </AppText>
-        </TouchableOpacity>
-
-        {!item.isDefault && (
-          <TouchableOpacity
-            onPress={() => handleSetDefault(item.id)}
-            onPressIn={() => setDefaultButtonPressed({...defaultButtonPressed, [item.id]: true})}
-            onPressOut={() => setDefaultButtonPressed({...defaultButtonPressed, [item.id]: false})}
-            activeOpacity={1}
-            style={[
-              styles.defaultButton,
-              defaultButtonPressed[item.id] && styles.defaultButtonPressed
-            ]}>
-            <AppText 
-              size="xs" 
-              variant="semiBold"
-              color={defaultButtonPressed[item.id] ? theme.colors.textWhite : theme.colors.accent}
-              style={styles.defaultButtonText}>
-              {t('masajids.setDefault')}
+    <TouchableOpacity
+      activeOpacity={0.85}
+      disabled={savingDefault || item.isDefault}
+      onPress={() => handleSwitchMasjid(item)}>
+      <AppCard
+        padding="medium"
+        shadow="small"
+        style={[styles.masjidCard, item.isDefault && styles.masjidCardActive]}>
+        <View style={styles.masjidHeader}>
+          <View style={styles.masjidInfo}>
+            <AppText variant="semiBold" size="lg">
+              {item.name}
             </AppText>
-          </TouchableOpacity>
-        )}
+            <AppText size="sm" color={theme.colors.textDark} style={styles.location}>
+              📍 {item.location}
+            </AppText>
+          </View>
+          <View style={[styles.radio, item.isDefault && styles.radioActive]}>
+            {item.isDefault ? <View style={styles.radioDot} /> : null}
+          </View>
+        </View>
 
-        {item.isDefault && (
+        {item.isDefault ? (
           <View style={styles.defaultBadge}>
             <AppText
               size="xs"
               color={theme.colors.textWhite}
               variant="semiBold"
               style={styles.defaultBadgeText}>
-              {t('masajids.default')}
+              {t('masajids.currentlyActive')}
+            </AppText>
+          </View>
+        ) : (
+          <View style={styles.switchButton}>
+            <AppText
+              size="xs"
+              variant="semiBold"
+              color={theme.colors.primary}
+              style={styles.switchButtonText}>
+              {t('masajids.switchToThis')}
             </AppText>
           </View>
         )}
-      </View>
-    </AppCard>
+      </AppCard>
+    </TouchableOpacity>
   );
 
   return (
@@ -105,6 +82,7 @@ export const MyMasajidsScreen: React.FC = () => {
         renderItem={renderMasjid}
         keyExtractor={item => item.id}
         contentContainerStyle={styles.listContent}
+        extraData={masajids.map(m => `${m.id}:${m.isDefault}`).join('|')}
       />
     </View>
   );
@@ -117,9 +95,15 @@ const styles = StyleSheet.create({
   },
   listContent: {
     padding: theme.spacing.md,
+    paddingBottom: 110,
   },
   masjidCard: {
     marginBottom: theme.spacing.md,
+    borderWidth: 1.5,
+    borderColor: theme.colors.border,
+  },
+  masjidCardActive: {
+    borderColor: theme.colors.primary,
   },
   masjidHeader: {
     flexDirection: 'row',
@@ -128,59 +112,52 @@ const styles = StyleSheet.create({
   },
   masjidInfo: {
     flex: 1,
+    paddingRight: theme.spacing.sm,
   },
   location: {
     marginTop: theme.spacing.xs,
     lineHeight: 20,
   },
-  actionsRow: {
-    flexDirection: 'row',
+  radio: {
+    width: 22,
+    height: 22,
+    borderRadius: 11,
+    borderWidth: 2,
+    borderColor: theme.colors.border,
     alignItems: 'center',
-    justifyContent: 'space-between',
-    marginTop: theme.spacing.md,
+    justifyContent: 'center',
+    marginTop: 2,
   },
-  viewDetailsButton: {
-    paddingHorizontal: theme.spacing.md,
-    paddingVertical: theme.spacing.sm,
-    borderRadius: theme.borderRadius.sm,
-    borderWidth: 1.5,
+  radioActive: {
     borderColor: theme.colors.primary,
-    backgroundColor: theme.colors.background,
-    flex: 1,
-    marginRight: theme.spacing.sm,
-    alignItems: 'center',
   },
-  viewDetailsButtonPressed: {
+  radioDot: {
+    width: 12,
+    height: 12,
+    borderRadius: 6,
     backgroundColor: theme.colors.primary,
-    borderColor: theme.colors.primary,
   },
-  viewDetailsText: {
-    letterSpacing: 0.8,
-  },
-  defaultButton: {
-    paddingHorizontal: theme.spacing.md,
+  switchButton: {
+    marginTop: theme.spacing.md,
     paddingVertical: theme.spacing.sm,
     borderRadius: theme.borderRadius.sm,
     borderWidth: 1.5,
-    borderColor: theme.colors.accent,
-    backgroundColor: theme.colors.background,
+    borderColor: theme.colors.primary,
     alignItems: 'center',
+    backgroundColor: theme.colors.background,
   },
-  defaultButtonPressed: {
-    backgroundColor: theme.colors.accent,
-    borderColor: theme.colors.accent,
-  },
-  defaultButtonText: {
-    letterSpacing: 0.8,
+  switchButtonText: {
+    letterSpacing: 0.6,
   },
   defaultBadge: {
+    marginTop: theme.spacing.md,
     backgroundColor: theme.colors.primary,
     paddingHorizontal: theme.spacing.md,
     paddingVertical: theme.spacing.sm,
     borderRadius: theme.borderRadius.sm,
+    alignItems: 'center',
   },
   defaultBadgeText: {
     letterSpacing: 0.8,
   },
 });
-

@@ -87,7 +87,7 @@ export const ActivityLogsScreen: React.FC = () => {
       <FlatList
         data={logs}
         renderItem={renderItem}
-        keyExtractor={item => item.id}
+        keyExtractor={(item, index) => item.id || `log-${index}`}
         contentContainerStyle={styles.listContent}
         refreshControl={
           <RefreshControl

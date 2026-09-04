@@ -109,6 +109,7 @@ const styles = StyleSheet.create({
   },
   listContent: {
     padding: theme.spacing.md,
+    paddingBottom: 110,
     flexGrow: 1,
   },
   notificationCard: {
