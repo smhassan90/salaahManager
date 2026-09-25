@@ -5,14 +5,16 @@ require Pod::Executable.execute_command('node', ['-p',
     {paths: [process.argv[1]]},
   )', __dir__]).strip
 
-# React Native Firebase (must be set before prepare_react_native_project!)
-$RNFirebaseAsStaticFramework = true
-
 platform :ios, min_ios_version_supported
 prepare_react_native_project!
 
-# Required for Firebase with React Native (avoids xcodebuild 65 / module errors)
-use_frameworks! :linkage => :static
+$RNFirebaseAsStaticFramework = true
+
+linkage = ENV['USE_FRAMEWORKS']
+if linkage != nil
+  Pod::UI.puts "Configuring Pod with #{linkage}ally linked Frameworks".green
+  use_frameworks! :linkage => linkage.to_sym
+end
 
 target 'salaahManager' do
   config = use_native_modules!
@@ -23,6 +25,8 @@ target 'salaahManager' do
     :app_path => "#{Pod::Config.instance.installation_root}/.."
   )
 
+  pod 'Firebase/Messaging'
+
   post_install do |installer|
     react_native_post_install(
       installer,
@@ -30,11 +34,5 @@ target 'salaahManager' do
       :mac_catalyst_enabled => false,
       # :ccache_enabled => true
     )
-
-    installer.pods_project.targets.each do |target|
-      target.build_configurations.each do |build_config|
-        build_config.build_settings['CLANG_ALLOW_NON_MODULAR_INCLUDES_IN_FRAMEWORK_MODULES'] = 'YES'
-      end
-    end
   end
 end
