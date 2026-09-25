@@ -147,10 +147,22 @@ web-build/
 # Temporary files
 tmp/
 temp/
+build-temp/
+**/build-temp/
 *.tmp
 *.swp
 *.swo
 *~
+
+# JVM / Gradle diagnostic dumps (local only)
+hs_err_pid*.log
+replay_pid*.log
+
+# Local native project backups from regen
+*-ios-backup/
+
+# RN scaffold folders used for ios regen
+_rn-scaffold-*/
 
 # Test coverage
 coverage/
