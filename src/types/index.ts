@@ -20,6 +20,8 @@ export interface Masjid {
   state?: string;
   country?: string;
   postal_code?: string;
+  latitude?: number;
+  longitude?: number;
   contact_email?: string;
   contact_phone?: string;
   is_active?: boolean;
@@ -114,8 +116,12 @@ export interface Event {
   description: string;
   event_date?: string; // YYYY-MM-DD
   event_time: string; // HH:MM
+  resolved_event_time?: string;
   event_type?: 'one_time' | 'recurring';
   day_of_week?: number; // 0=Sunday, 6=Saturday
+  time_mode?: 'fixed' | 'after_prayer';
+  after_prayer?: string;
+  minutes_after?: number;
   location?: string;
   created_at?: string;
   updated_at?: string;

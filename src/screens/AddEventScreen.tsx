@@ -1,4 +1,4 @@
-import React, {useState} from 'react';
+import React, {useEffect, useMemo, useState} from 'react';
 import {View, StyleSheet, ScrollView, Alert, TouchableOpacity, Platform} from 'react-native';
 import {useNavigation, useRoute, RouteProp} from '@react-navigation/native';
 import {StackNavigationProp} from '@react-navigation/stack';
@@ -7,6 +7,7 @@ import {RootStackParamList} from '../navigation/types';
 import {AppText, AppButton, AppCard, AppHeader, AppTextInput} from '../components';
 import {theme} from '../theme';
 import {useApp} from '../context';
+import {getErrorMessage} from '../services/api/apiClient';
 
 type AddEventScreenNavigationProp = StackNavigationProp<
   RootStackParamList,
@@ -23,6 +24,17 @@ const DAYS_OF_WEEK = [
   {label: 'Fri', value: 5},
   {label: 'Sat', value: 6},
 ];
+
+const AFTER_PRAYERS = [
+  {label: 'Fajar', value: 'Fajr'},
+  {label: 'Zohar', value: 'Dhuhr'},
+  {label: 'Asar', value: 'Asr'},
+  {label: 'Maghrib', value: 'Maghrib'},
+  {label: 'Isha', value: 'Isha'},
+  {label: 'Jumma', value: 'Jummah'},
+] as const;
+
+const FRIDAY = 5;
 
 const formatDate = (date: Date) => {
   const year = date.getFullYear();
@@ -44,16 +56,42 @@ export const AddEventScreen: React.FC = () => {
   const {addEvent} = useApp();
 
   const [eventType, setEventType] = useState<'one_time' | 'recurring'>('one_time');
+  const [timeMode, setTimeMode] = useState<'fixed' | 'after_prayer'>('fixed');
   const [eventName, setEventName] = useState('');
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [selectedTime, setSelectedTime] = useState(new Date());
   const [eventDate, setEventDate] = useState(formatDate(new Date()));
   const [eventTime, setEventTime] = useState('');
-  const [dayOfWeek, setDayOfWeek] = useState<number>(5);
+  const [selectedDays, setSelectedDays] = useState<number[]>([5]);
+  const [afterPrayer, setAfterPrayer] = useState<(typeof AFTER_PRAYERS)[number]['value']>('Isha');
   const [description, setDescription] = useState('');
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [showTimePicker, setShowTimePicker] = useState(false);
   const [loading, setLoading] = useState(false);
+
+  const fridayOnly = selectedDays.length === 1 && selectedDays[0] === FRIDAY;
+  const availableAfterPrayers = useMemo(
+    () => AFTER_PRAYERS.filter(prayer => prayer.value !== 'Jummah' || fridayOnly),
+    [fridayOnly],
+  );
+
+  useEffect(() => {
+    if (!fridayOnly && afterPrayer === 'Jummah') {
+      setAfterPrayer('Isha');
+    }
+  }, [fridayOnly, afterPrayer]);
+
+  const toggleDay = (day: number) => {
+    setSelectedDays(prev => {
+      if (prev.includes(day)) {
+        if (prev.length === 1) {
+          return prev;
+        }
+        return prev.filter(d => d !== day).sort((a, b) => a - b);
+      }
+      return [...prev, day].sort((a, b) => a - b);
+    });
+  };
 
   const handleDateChange = (_event: any, date?: Date) => {
     if (Platform.OS === 'android') {
@@ -81,18 +119,26 @@ export const AddEventScreen: React.FC = () => {
       return;
     }
 
-    if (!eventTime.trim()) {
-      Alert.alert('Error', 'Please select Event Time');
-      return;
-    }
+    const useAfterPrayer = eventType === 'recurring' && timeMode === 'after_prayer';
 
-    if (!/^([01]\d|2[0-3]):[0-5]\d$/.test(eventTime.trim())) {
-      Alert.alert('Error', 'Please enter time in 24-hour HH:MM format');
-      return;
+    if (!useAfterPrayer) {
+      if (!eventTime.trim()) {
+        Alert.alert('Error', 'Please select Event Time');
+        return;
+      }
+      if (!/^([01]\d|2[0-3]):[0-5]\d$/.test(eventTime.trim())) {
+        Alert.alert('Error', 'Please enter time in 24-hour HH:MM format');
+        return;
+      }
     }
 
     if (eventType === 'one_time' && !eventDate.trim()) {
       Alert.alert('Error', 'Please select the Event Date');
+      return;
+    }
+
+    if (eventType === 'recurring' && selectedDays.length === 0) {
+      Alert.alert('Error', 'Please select at least one day');
       return;
     }
 
@@ -103,8 +149,13 @@ export const AddEventScreen: React.FC = () => {
         name: eventName.trim(),
         description: description.trim(),
         eventType,
-        ...(eventType === 'one_time' ? {date: eventDate.trim()} : {dayOfWeek}),
-        time: eventTime.trim(),
+        ...(eventType === 'one_time'
+          ? {date: eventDate.trim()}
+          : {daysOfWeek: selectedDays}),
+        timeMode: useAfterPrayer ? 'after_prayer' : 'fixed',
+        ...(useAfterPrayer
+          ? {afterPrayer, minutesAfter: 0, time: '00:00'}
+          : {time: eventTime.trim()}),
       });
 
       Alert.alert('Success', 'Event added successfully!', [
@@ -114,11 +165,7 @@ export const AddEventScreen: React.FC = () => {
         },
       ]);
     } catch (error: any) {
-      const message =
-        error?.response?.data?.message ||
-        error?.message ||
-        'Failed to create event. Please try again.';
-      Alert.alert('Error', message);
+      Alert.alert('Error', getErrorMessage(error));
       setLoading(false);
     }
   };
@@ -182,44 +229,109 @@ export const AddEventScreen: React.FC = () => {
           ) : (
             <View style={styles.daySelectorContainer}>
               <AppText variant="semiBold" style={styles.sectionLabel}>Repeats every</AppText>
+              <AppText size="xs" color={theme.colors.textLight} style={styles.hintText}>
+                Select one or more days
+              </AppText>
               <View style={styles.daysRow}>
-                {DAYS_OF_WEEK.map(day => (
-                  <TouchableOpacity
-                    key={day.value}
-                    style={[
-                      styles.dayButton,
-                      dayOfWeek === day.value && styles.dayButtonActive,
-                    ]}
-                    onPress={() => setDayOfWeek(day.value)}>
-                    <AppText
-                      size="sm"
-                      variant={dayOfWeek === day.value ? 'semiBold' : 'regular'}
-                      color={dayOfWeek === day.value ? theme.colors.textWhite : theme.colors.textDark}>
-                      {day.label}
-                    </AppText>
-                  </TouchableOpacity>
-                ))}
+                {DAYS_OF_WEEK.map(day => {
+                  const active = selectedDays.includes(day.value);
+                  return (
+                    <TouchableOpacity
+                      key={day.value}
+                      style={[styles.dayButton, active && styles.dayButtonActive]}
+                      onPress={() => toggleDay(day.value)}>
+                      <AppText
+                        size="sm"
+                        variant={active ? 'semiBold' : 'regular'}
+                        color={active ? theme.colors.textWhite : theme.colors.textDark}>
+                        {day.label}
+                      </AppText>
+                    </TouchableOpacity>
+                  );
+                })}
               </View>
             </View>
           )}
 
-          <View style={styles.pickerField}>
-            <AppText variant="semiBold" style={styles.sectionLabel}>Event Time</AppText>
-            <TouchableOpacity
-              style={styles.pickerButton}
-              onPress={() => setShowTimePicker(true)}>
-              <AppText>{eventTime || 'Select time'}</AppText>
-            </TouchableOpacity>
-            {showTimePicker && (
-              <DateTimePicker
-                value={selectedTime}
-                mode="time"
-                is24Hour
-                display={Platform.OS === 'ios' ? 'spinner' : 'default'}
-                onChange={handleTimeChange}
-              />
-            )}
-          </View>
+          {eventType === 'recurring' && (
+            <View style={styles.pickerField}>
+              <AppText variant="semiBold" style={styles.sectionLabel}>When does it start?</AppText>
+              <View style={styles.eventTypeContainer}>
+                <TouchableOpacity
+                  style={[styles.typeButton, timeMode === 'fixed' && styles.typeButtonActive]}
+                  onPress={() => setTimeMode('fixed')}>
+                  <AppText
+                    size="sm"
+                    variant={timeMode === 'fixed' ? 'semiBold' : 'regular'}
+                    color={timeMode === 'fixed' ? theme.colors.textWhite : theme.colors.textDark}
+                    align="center">
+                    Fixed time
+                  </AppText>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={[styles.typeButton, timeMode === 'after_prayer' && styles.typeButtonActive]}
+                  onPress={() => setTimeMode('after_prayer')}>
+                  <AppText
+                    size="sm"
+                    variant={timeMode === 'after_prayer' ? 'semiBold' : 'regular'}
+                    color={timeMode === 'after_prayer' ? theme.colors.textWhite : theme.colors.textDark}
+                    align="center">
+                    After namaz
+                  </AppText>
+                </TouchableOpacity>
+              </View>
+              <AppText size="xs" color={theme.colors.textLight} style={styles.hintText}>
+                {timeMode === 'fixed'
+                  ? 'Example: Mon & Wed at 1:00 PM'
+                  : fridayOnly
+                    ? 'Example: after Jumma or after Maghrib'
+                    : 'Example: after Maghrib or after Isha'}
+              </AppText>
+            </View>
+          )}
+
+          {eventType === 'recurring' && timeMode === 'after_prayer' ? (
+            <View style={styles.pickerField}>
+              <AppText variant="semiBold" style={styles.sectionLabel}>After which prayer?</AppText>
+              <View style={styles.prayerGrid}>
+                {availableAfterPrayers.map(prayer => {
+                  const active = afterPrayer === prayer.value;
+                  return (
+                    <TouchableOpacity
+                      key={prayer.value}
+                      style={[styles.prayerButton, active && styles.typeButtonActive]}
+                      onPress={() => setAfterPrayer(prayer.value)}>
+                      <AppText
+                        size="sm"
+                        variant={active ? 'semiBold' : 'regular'}
+                        color={active ? theme.colors.textWhite : theme.colors.textDark}
+                        align="center">
+                        After {prayer.label}
+                      </AppText>
+                    </TouchableOpacity>
+                  );
+                })}
+              </View>
+            </View>
+          ) : (
+            <View style={styles.pickerField}>
+              <AppText variant="semiBold" style={styles.sectionLabel}>Event Time</AppText>
+              <TouchableOpacity
+                style={styles.pickerButton}
+                onPress={() => setShowTimePicker(true)}>
+                <AppText>{eventTime || 'Select time'}</AppText>
+              </TouchableOpacity>
+              {showTimePicker && (
+                <DateTimePicker
+                  value={selectedTime}
+                  mode="time"
+                  is24Hour
+                  display={Platform.OS === 'ios' ? 'spinner' : 'default'}
+                  onChange={handleTimeChange}
+                />
+              )}
+            </View>
+          )}
 
           <AppTextInput
             label="Description"
@@ -269,7 +381,9 @@ const styles = StyleSheet.create({
   typeButton: {
     flex: 1,
     paddingVertical: theme.spacing.sm,
+    paddingHorizontal: theme.spacing.xs,
     alignItems: 'center',
+    justifyContent: 'center',
     borderRadius: theme.borderRadius.sm,
     backgroundColor: theme.colors.backgroundLight,
     borderWidth: 1,
@@ -286,6 +400,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     flexWrap: 'wrap',
     gap: theme.spacing.xs,
+    marginTop: theme.spacing.xs,
   },
   dayButton: {
     paddingVertical: theme.spacing.xs,
@@ -301,6 +416,23 @@ const styles = StyleSheet.create({
     backgroundColor: theme.colors.primary,
     borderColor: theme.colors.primary,
   },
+  prayerGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: theme.spacing.sm,
+  },
+  prayerButton: {
+    width: '31%',
+    flexGrow: 1,
+    paddingVertical: theme.spacing.sm,
+    paddingHorizontal: theme.spacing.xs,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderRadius: theme.borderRadius.sm,
+    backgroundColor: theme.colors.backgroundLight,
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+  },
   pickerField: {
     marginBottom: theme.spacing.md,
   },
@@ -311,6 +443,10 @@ const styles = StyleSheet.create({
     paddingVertical: theme.spacing.sm,
     paddingHorizontal: theme.spacing.md,
     backgroundColor: theme.colors.backgroundLight,
+  },
+  hintText: {
+    marginTop: theme.spacing.xs,
+    lineHeight: 18,
   },
   saveButton: {
     marginTop: theme.spacing.md,

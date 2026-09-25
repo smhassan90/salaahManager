@@ -7,6 +7,7 @@ import apiClient, {ApiResponse} from './apiClient';
 import {API_ENDPOINTS} from '../../config/api.config';
 import {Masjid} from '../../types';
 import {storage} from '../../utils/storage';
+import {withMasjidCoordinates} from '../../utils/geocodeMasjid';
 
 export interface MasjidStatistics {
   totalMembers: number;
@@ -79,6 +80,8 @@ export interface UpdateMasjidRequest {
   postal_code?: string;
   contact_email?: string;
   contact_phone?: string;
+  latitude?: number;
+  longitude?: number;
 }
 
 export interface AddUserToMasjidRequest {
@@ -122,6 +125,8 @@ export interface CreateMasjidRequest {
   postal_code: string;
   contact_email: string;
   contact_phone: string;
+  latitude?: number;
+  longitude?: number;
 }
 
 export const masjidService = {
@@ -156,9 +161,10 @@ export const masjidService = {
   async createMasjid(
     data: CreateMasjidRequest,
   ): Promise<ApiResponse<Masjid>> {
+    const payload = await withMasjidCoordinates(data);
     const response = await apiClient.post<ApiResponse<Masjid>>(
       API_ENDPOINTS.MASAJIDS,
-      data,
+      payload,
     );
     return response.data;
   },
@@ -214,9 +220,19 @@ export const masjidService = {
     masjidId: string,
     data: UpdateMasjidRequest,
   ): Promise<ApiResponse<Masjid>> {
+    const addressTouched =
+      data.address !== undefined ||
+      data.location !== undefined ||
+      data.city !== undefined ||
+      data.state !== undefined ||
+      data.country !== undefined;
+    const payload =
+      addressTouched && (data.latitude == null || data.longitude == null)
+        ? await withMasjidCoordinates(data)
+        : data;
     const response = await apiClient.put<ApiResponse<Masjid>>(
       API_ENDPOINTS.UPDATE_MASJID(masjidId),
-      data,
+      payload,
     );
     return response.data;
   },

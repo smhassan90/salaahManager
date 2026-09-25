@@ -1,5 +1,15 @@
 import React, {useState, useCallback} from 'react';
-import {View, StyleSheet, FlatList, TouchableOpacity, Modal, RefreshControl} from 'react-native';
+import {
+  View,
+  StyleSheet,
+  FlatList,
+  TouchableOpacity,
+  Modal,
+  RefreshControl,
+  KeyboardAvoidingView,
+  Platform,
+  ScrollView,
+} from 'react-native';
 import {useFocusEffect} from '@react-navigation/native';
 import {AppText, AppButton, AppCard, AppHeader, AppTextInput} from '../components';
 import {theme} from '../theme';
@@ -273,68 +283,81 @@ export const QuestionsScreen: React.FC = () => {
         animationType="fade"
         onRequestClose={handleCloseReplyModal}>
         <View style={styles.modalOverlay}>
-          <View style={styles.modalContent}>
-            <AppText variant="semiBold" size="lg" style={styles.modalTitle}>
-              {t('questions.replyToQuestion')}
-            </AppText>
+          <KeyboardAvoidingView
+            behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+            style={styles.modalKeyboardView}
+            keyboardVerticalOffset={Platform.OS === 'ios' ? 24 : 0}>
+            <ScrollView
+              contentContainerStyle={styles.modalScrollContent}
+              keyboardShouldPersistTaps="handled"
+              showsVerticalScrollIndicator={false}
+              bounces={false}>
+              <View style={styles.modalContent}>
+                <AppText variant="semiBold" size="lg" style={styles.modalTitle}>
+                  {t('questions.replyToQuestion')}
+                </AppText>
 
-            {selectedQuestion && (
-              <View style={styles.questionPreview}>
-                <AppText variant="semiBold" size="sm" style={styles.previewTitle}>
-                  {selectedQuestion.title}
+                {selectedQuestion && (
+                  <View style={styles.questionPreview}>
+                    <AppText variant="semiBold" size="sm" style={styles.previewTitle}>
+                      {selectedQuestion.title}
+                    </AppText>
+                    <AppText size="xs" color={theme.colors.textLight}>
+                      {t('common.by')} {selectedQuestion.userName}
+                    </AppText>
+                    <AppText size="sm" style={styles.questionPreviewText}>
+                      {selectedQuestion.question}
+                    </AppText>
+                  </View>
+                )}
+
+                <AppTextInput
+                  label={t('questions.yourReply')}
+                  placeholder={t('questions.yourReplyPlaceholder')}
+                  value={replyText}
+                  onChangeText={setReplyText}
+                  multiline
+                  editable={!isReplying}
+                  style={styles.replyInput}
+                  scrollEnabled
+                />
+                <AppText
+                  size="xs"
+                  color={isReplyTooShort ? theme.colors.error : theme.colors.textLight}
+                  style={styles.replyLengthHint}>
+                  {t('questions.replyMinLength')}
                 </AppText>
-                <AppText size="xs" color={theme.colors.textLight}>
-                  {t('common.by')} {selectedQuestion.userName}
-                </AppText>
-                <AppText size="sm" style={styles.questionPreviewText}>
-                  {selectedQuestion.question}
-                </AppText>
+
+                <View style={styles.modalButtons}>
+                  <AppButton
+                    title={t('common.cancel')}
+                    onPress={handleCloseReplyModal}
+                    variant="outline"
+                    size="small"
+                    style={styles.modalButton}
+                    disabled={isReplying}
+                  />
+                  <TouchableOpacity
+                    onPress={handleSendReply}
+                    onPressIn={() => setSendReplyButtonPressed(true)}
+                    onPressOut={() => setSendReplyButtonPressed(false)}
+                    activeOpacity={1}
+                    disabled={isReplyTooShort || isReplying}
+                    style={[
+                      styles.sendReplyButton,
+                      sendReplyButtonPressed && !isReplying && styles.sendReplyButtonPressed,
+                      (isReplyTooShort || isReplying) && styles.sendReplyButtonDisabled,
+                    ]}>
+                    <AppText variant="semiBold" size="sm" color={theme.colors.textWhite}>
+                      {isReplying
+                        ? t('questions.sendingReply') || 'Sending...'
+                        : t('questions.sendReply')}
+                    </AppText>
+                  </TouchableOpacity>
+                </View>
               </View>
-            )}
-
-            <AppTextInput
-              label={t('questions.yourReply')}
-              placeholder={t('questions.yourReplyPlaceholder')}
-              value={replyText}
-              onChangeText={setReplyText}
-              multiline
-              editable={!isReplying}
-            />
-            <AppText
-              size="xs"
-              color={isReplyTooShort ? theme.colors.error : theme.colors.textLight}
-              style={styles.replyLengthHint}>
-              {t('questions.replyMinLength')}
-            </AppText>
-
-            <View style={styles.modalButtons}>
-              <AppButton
-                title={t('common.cancel')}
-                onPress={handleCloseReplyModal}
-                variant="outline"
-                size="small"
-                style={styles.modalButton}
-                disabled={isReplying}
-              />
-              <TouchableOpacity
-                onPress={handleSendReply}
-                onPressIn={() => setSendReplyButtonPressed(true)}
-                onPressOut={() => setSendReplyButtonPressed(false)}
-                activeOpacity={1}
-                disabled={isReplyTooShort || isReplying}
-                style={[
-                  styles.sendReplyButton,
-                  sendReplyButtonPressed && !isReplying && styles.sendReplyButtonPressed,
-                  (isReplyTooShort || isReplying) && styles.sendReplyButtonDisabled
-                ]}>
-                <AppText variant="semiBold" size="sm" color={theme.colors.textWhite}>
-                  {isReplying
-                    ? t('questions.sendingReply') || 'Sending...'
-                    : t('questions.sendReply')}
-                </AppText>
-              </TouchableOpacity>
-            </View>
-          </View>
+            </ScrollView>
+          </KeyboardAvoidingView>
         </View>
       </Modal>
     </View>
@@ -447,9 +470,17 @@ const styles = StyleSheet.create({
   modalOverlay: {
     flex: 1,
     backgroundColor: 'rgba(0, 0, 0, 0.5)',
-    justifyContent: 'center',
-    alignItems: 'center',
+    justifyContent: 'flex-end',
+  },
+  modalKeyboardView: {
+    width: '100%',
+    maxHeight: '100%',
+  },
+  modalScrollContent: {
+    flexGrow: 1,
+    justifyContent: 'flex-end',
     padding: theme.spacing.lg,
+    paddingBottom: Platform.OS === 'ios' ? theme.spacing.xl : theme.spacing.lg,
   },
   modalContent: {
     backgroundColor: theme.colors.background,
@@ -457,6 +488,7 @@ const styles = StyleSheet.create({
     padding: theme.spacing.lg,
     width: '100%',
     maxWidth: 400,
+    alignSelf: 'center',
   },
   modalTitle: {
     marginBottom: theme.spacing.md,
@@ -466,6 +498,7 @@ const styles = StyleSheet.create({
     padding: theme.spacing.md,
     borderRadius: theme.borderRadius.sm,
     marginBottom: theme.spacing.md,
+    maxHeight: 140,
   },
   previewTitle: {
     marginBottom: theme.spacing.xs,
@@ -473,6 +506,9 @@ const styles = StyleSheet.create({
   questionPreviewText: {
     marginTop: theme.spacing.sm,
     color: theme.colors.textDark,
+  },
+  replyInput: {
+    maxHeight: 160,
   },
   replyLengthHint: {
     marginTop: -theme.spacing.sm,

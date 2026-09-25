@@ -37,6 +37,25 @@ export const EventsScreen: React.FC = () => {
     return item.date || 'No Date';
   };
 
+  const getEventTimeString = (item: Event) => {
+    const prayerLabels: Record<string, string> = {
+      Fajr: 'Fajar',
+      Dhuhr: 'Zohar',
+      Asr: 'Asar',
+      Maghrib: 'Maghrib',
+      Isha: 'Isha',
+      Jummah: 'Jumma',
+    };
+    if (item.time_mode === 'after_prayer' && item.after_prayer) {
+      const label = prayerLabels[item.after_prayer] || item.after_prayer;
+      const resolved = (item.resolved_event_time || item.time || '').toString().substring(0, 5);
+      return resolved && resolved !== '00:00'
+        ? `After ${label} · ${resolved}`
+        : `After ${label}`;
+    }
+    return item.time || item.event_time || '--:--';
+  };
+
   const renderItem = ({item}: {item: Event}) => (
     <AppCard padding="medium" shadow="small" style={styles.eventCard}>
       <View style={styles.eventHeader}>
@@ -48,7 +67,7 @@ export const EventsScreen: React.FC = () => {
           </View>
           <View style={styles.timeBadge}>
             <AppText size="xs" color={theme.colors.primary} variant="semiBold">
-              🕐 {item.time}
+              🕐 {getEventTimeString(item)}
             </AppText>
           </View>
         </View>

@@ -52,7 +52,7 @@ interface AppContextType {
   markNotificationAsRead: (notificationId: string) => Promise<void>;
   markAllNotificationsAsRead: () => Promise<void>;
   fetchEvents: (masjidId: string) => Promise<void>;
-  addEvent: (event: {masjidId: string; name: string; description?: string; eventType?: 'one_time' | 'recurring'; dayOfWeek?: number; date?: string; time: string; location?: string}) => Promise<void>;
+  addEvent: (event: {masjidId: string; name: string; description?: string; eventType?: 'one_time' | 'recurring'; dayOfWeek?: number; daysOfWeek?: number[]; date?: string; time: string; timeMode?: 'fixed' | 'after_prayer'; afterPrayer?: string; minutesAfter?: number; location?: string}) => Promise<void>;
   deleteEvent: (eventId: string) => Promise<void>;
   
   // Language Actions
@@ -925,14 +925,18 @@ export const AppProvider: React.FC<{children: ReactNode}> = ({children}) => {
         name: e.name,
         description: e.description || '',
         event_date: e.event_date,
-        event_time: e.event_time || '',
+        event_time: e.resolved_event_time || e.event_time || '',
+        resolved_event_time: e.resolved_event_time,
         event_type: e.event_type,
         day_of_week: e.day_of_week,
+        time_mode: e.time_mode,
+        after_prayer: e.after_prayer,
+        minutes_after: e.minutes_after,
         location: e.location,
         // Legacy format
         masjidId: e.masjid_id || masjidId,
         date: e.event_date,
-        time: e.event_time ? e.event_time.substring(0, 5) : '', // HH:MM:SS -> HH:MM
+        time: (e.resolved_event_time || e.event_time || '').toString().substring(0, 5),
       }));
       setEvents(evs);
     } catch (error) {
@@ -946,8 +950,12 @@ export const AppProvider: React.FC<{children: ReactNode}> = ({children}) => {
     description?: string;
     eventType?: 'one_time' | 'recurring';
     dayOfWeek?: number;
+    daysOfWeek?: number[];
     date?: string;
     time: string;
+    timeMode?: 'fixed' | 'after_prayer';
+    afterPrayer?: string;
+    minutesAfter?: number;
     location?: string;
   }): Promise<void> => {
     try {
@@ -972,35 +980,76 @@ export const AppProvider: React.FC<{children: ReactNode}> = ({children}) => {
           return dateStr;
         }
       };
-      
-      const response = await eventService.createEvent({
-        masjidId: event.masjidId,
-        name: event.name,
-        description: event.description,
-        eventType: event.eventType,
-        dayOfWeek: event.dayOfWeek,
-        eventDate: event.date ? convertDateFormat(event.date) : undefined,
-        eventTime: event.time,
-        location: event.location,
-      });
-      
-      const newEvent: Event = {
-        id: response.data.id,
-        masjid_id: response.data.masjid_id || event.masjidId,
-        name: response.data.name,
-        description: response.data.description || '',
-        event_date: response.data.event_date,
-        event_time: response.data.event_time,
-        event_type: response.data.event_type,
-        day_of_week: response.data.day_of_week,
-        location: response.data.location,
-        // Legacy format
-        masjidId: response.data.masjid_id || event.masjidId,
-        date: response.data.event_date,
-        time: (response.data.event_time || event.time || '').toString().substring(0, 5),
-      };
-      
-      setEvents(prev => [newEvent, ...prev]);
+
+      const daysToCreate =
+        event.eventType === 'recurring'
+          ? Array.from(
+              new Set(
+                (event.daysOfWeek?.length
+                  ? event.daysOfWeek
+                  : event.dayOfWeek !== undefined
+                    ? [event.dayOfWeek]
+                    : []
+                ).map(Number),
+              ),
+            ).sort((a, b) => a - b)
+          : [undefined as number | undefined];
+
+      if (event.eventType === 'recurring' && daysToCreate.length === 0) {
+        throw new Error('Please select at least one day');
+      }
+
+      const createdEvents: Event[] = [];
+
+      for (const day of daysToCreate) {
+        const response = await eventService.createEvent({
+          masjidId: event.masjidId,
+          name: event.name,
+          description: event.description?.trim() ? event.description.trim() : undefined,
+          eventType: event.eventType,
+          dayOfWeek: day,
+          eventDate: event.date ? convertDateFormat(event.date) : undefined,
+          eventTime:
+            event.timeMode === 'after_prayer'
+              ? '00:00'
+              : event.time,
+          timeMode: event.timeMode || 'fixed',
+          afterPrayer:
+            event.timeMode === 'after_prayer' ? event.afterPrayer : undefined,
+          minutesAfter:
+            event.timeMode === 'after_prayer' ? event.minutesAfter ?? 0 : undefined,
+          location: event.location,
+        });
+
+        createdEvents.push({
+          id: response.data.id,
+          masjid_id: response.data.masjid_id || event.masjidId,
+          name: response.data.name,
+          description: response.data.description || '',
+          event_date: response.data.event_date,
+          event_time: response.data.resolved_event_time || response.data.event_time,
+          resolved_event_time: response.data.resolved_event_time,
+          event_type: response.data.event_type,
+          day_of_week: response.data.day_of_week,
+          time_mode: response.data.time_mode,
+          after_prayer: response.data.after_prayer,
+          minutes_after: response.data.minutes_after,
+          location: response.data.location,
+          // Legacy format
+          masjidId: response.data.masjid_id || event.masjidId,
+          date: response.data.event_date,
+          time: (
+            response.data.resolved_event_time ||
+            response.data.event_time ||
+            event.time ||
+            ''
+          )
+            .toString()
+            .substring(0, 5),
+        });
+      }
+
+      setEvents(prev => [...createdEvents, ...prev]);
       // Success - no dialog box needed, UI will update automatically
     } catch (error: any) {
       // Check if it's a permission error (403 or permission-related message)

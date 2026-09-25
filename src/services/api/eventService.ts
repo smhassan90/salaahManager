@@ -14,7 +14,10 @@ export interface CreateEventRequest {
   eventType?: 'one_time' | 'recurring';
   dayOfWeek?: number;
   eventDate?: string; // YYYY-MM-DD (optional for recurring)
-  eventTime: string; // HH:MM
+  eventTime?: string; // HH:MM (optional for after_prayer)
+  timeMode?: 'fixed' | 'after_prayer';
+  afterPrayer?: 'Fajr' | 'Dhuhr' | 'Asr' | 'Maghrib' | 'Isha' | 'Jummah' | string;
+  minutesAfter?: number;
   location?: string;
 }
 

@@ -188,6 +188,11 @@ export const getErrorMessage = (error: any): string => {
     }
     
     const apiError = error.response?.data as ApiError;
+    if (apiError?.errors?.length) {
+      return apiError.errors.map(err => err.message).filter(Boolean).join('\n')
+        || apiError.message
+        || 'Validation failed';
+    }
     return apiError?.message || error.message || 'An error occurred. Please try again.';
   }
   return error.message || 'An unexpected error occurred. Please try again.';

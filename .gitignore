@@ -20,7 +20,7 @@ DerivedData
 *.hmap
 *.ipa
 *.xcuserstate
-**/.xcode.env.local
+ios/ExportOptions.plist
 
 # Android/IntelliJ
 #

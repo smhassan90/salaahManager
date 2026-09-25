@@ -17,13 +17,10 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
     _ application: UIApplication,
     didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]? = nil
   ) -> Bool {
-    // Initialize Firebase
     FirebaseApp.configure()
-    
-    // Set FCM messaging delegate
+
     Messaging.messaging().delegate = self
-    
-    // Request notification permissions
+
     UNUserNotificationCenter.current().delegate = self
     UNUserNotificationCenter.current().requestAuthorization(options: [.alert, .badge, .sound]) { granted, _ in
       if granted {
@@ -32,7 +29,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
         }
       }
     }
-    
+
     let delegate = ReactNativeDelegate()
     let factory = RCTReactNativeFactory(delegate: delegate)
     delegate.dependencyProvider = RCTAppDependencyProvider()
@@ -43,21 +40,20 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
     window = UIWindow(frame: UIScreen.main.bounds)
 
     factory.startReactNative(
-      withModuleName: "salaahManager",
+      withModuleName: "alasr-manager-masajid-prayer-timings",
       in: window,
       launchOptions: launchOptions
     )
 
     return true
   }
-  
+
   func application(_ application: UIApplication, didRegisterForRemoteNotificationsWithDeviceToken deviceToken: Data) {
     Messaging.messaging().apnsToken = deviceToken
-    print("✅ APNS token registered successfully")
   }
-  
+
   func application(_ application: UIApplication, didFailToRegisterForRemoteNotificationsWithError error: Error) {
-    print("❌ Failed to register for remote notifications: \(error.localizedDescription)")
+    print("Failed to register for remote notifications: \(error.localizedDescription)")
   }
 }
 
@@ -75,24 +71,28 @@ class ReactNativeDelegate: RCTDefaultReactNativeFactoryDelegate {
   }
 }
 
-// MARK: - UNUserNotificationCenterDelegate
 extension AppDelegate: UNUserNotificationCenterDelegate {
-  func userNotificationCenter(_ center: UNUserNotificationCenter, willPresent notification: UNNotification, withCompletionHandler completionHandler: @escaping (UNNotificationPresentationOptions) -> Void) {
+  func userNotificationCenter(
+    _ center: UNUserNotificationCenter,
+    willPresent notification: UNNotification,
+    withCompletionHandler completionHandler: @escaping (UNNotificationPresentationOptions) -> Void
+  ) {
     completionHandler([[.banner, .sound, .badge]])
   }
-  
-  func userNotificationCenter(_ center: UNUserNotificationCenter, didReceive response: UNNotificationResponse, withCompletionHandler completionHandler: @escaping () -> Void) {
+
+  func userNotificationCenter(
+    _ center: UNUserNotificationCenter,
+    didReceive response: UNNotificationResponse,
+    withCompletionHandler completionHandler: @escaping () -> Void
+  ) {
     completionHandler()
   }
 }
 
-// MARK: - MessagingDelegate
 extension AppDelegate: MessagingDelegate {
   func messaging(_ messaging: Messaging, didReceiveRegistrationToken fcmToken: String?) {
     if let token = fcmToken {
-      print("✅ FCM Token received: \(token)")
-    } else {
-      print("⚠️ FCM Token is nil")
+      print("FCM Token: \(token)")
     }
   }
 }
