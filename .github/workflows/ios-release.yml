@@ -18,7 +18,7 @@ env:
   NODE_VERSION: '20'
   IOS_SCHEME: salaahManager
   IOS_WORKSPACE: ios/salaahManager.xcworkspace
-  IOS_BUNDLE_ID: org.reactjs.native.example.salaahManager
+  IOS_BUNDLE_ID: com.alasr.manager
   EXPORT_PATH: build/ios
   IPA_NAME: salaahManager-release.ipa
 
