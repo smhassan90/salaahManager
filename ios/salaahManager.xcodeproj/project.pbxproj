@@ -115,6 +115,7 @@
 				13B07F871A680F5B00A75B9A /* Sources */,
 				13B07F8C1A680F5B00A75B9A /* Frameworks */,
 				13B07F8E1A680F5B00A75B9A /* Resources */,
+				C1D2E3F401234567890ABCDE /* Copy Ionicons.ttf to bundle */,
 				00DD1BFF1BD5951E006B06BC /* Bundle React Native code and images */,
 				00EEFC60759A1932668264C0 /* [CP] Embed Pods Frameworks */,
 				E235C05ADACE081382539298 /* [CP] Copy Pods Resources */,
@@ -176,6 +177,22 @@
 /* End PBXResourcesBuildPhase section */
 
 /* Begin PBXShellScriptBuildPhase section */
+		C1D2E3F401234567890ABCDE /* Copy Ionicons.ttf to bundle */ = {
+			isa = PBXShellScriptBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputPaths = (
+				"$(SRCROOT)/salaahManager/Fonts/Ionicons.ttf",
+			);
+			name = "Copy Ionicons.ttf to bundle";
+			outputPaths = (
+				"$(TARGET_BUILD_DIR)/$(UNLOCALIZED_RESOURCES_FOLDER_PATH)/Ionicons.ttf",
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "set -e\nDEST=\"${TARGET_BUILD_DIR}/${UNLOCALIZED_RESOURCES_FOLDER_PATH}\"\nmkdir -p \"${DEST}\"\nif [ -f \"${SRCROOT}/salaahManager/Fonts/Ionicons.ttf\" ]; then\n  cp -f \"${SRCROOT}/salaahManager/Fonts/Ionicons.ttf\" \"${DEST}/Ionicons.ttf\"\nelif [ -f \"${SRCROOT}/../node_modules/react-native-vector-icons/Fonts/Ionicons.ttf\" ]; then\n  cp -f \"${SRCROOT}/../node_modules/react-native-vector-icons/Fonts/Ionicons.ttf\" \"${DEST}/Ionicons.ttf\"\nelse\n  echo \"warning: Ionicons.ttf not found\" >&2\nfi\n";
+		};
 		00DD1BFF1BD5951E006B06BC /* Bundle React Native code and images */ = {
 			isa = PBXShellScriptBuildPhase;
 			buildActionMask = 2147483647;

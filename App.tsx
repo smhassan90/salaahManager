@@ -16,7 +16,11 @@ import {navigationRef} from './src/navigation/navigationRef';
 import './src/i18n/config'; // Initialize i18n
 import Ionicons from 'react-native-vector-icons/Ionicons';
 
-Ionicons.loadFont().catch(() => {});
+Ionicons.loadFont().catch(err => {
+  if (__DEV__) {
+    console.warn('Ionicons.loadFont failed (icons may be missing on iOS):', err);
+  }
+});
 
 type Screen = 'splash' | 'login' | 'home';
 
