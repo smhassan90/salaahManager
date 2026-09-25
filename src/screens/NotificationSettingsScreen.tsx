@@ -2,7 +2,7 @@ import React, {useState, useEffect} from 'react';
 import {View, StyleSheet, ScrollView, Switch, Alert} from 'react-native';
 import {StackNavigationProp} from '@react-navigation/stack';
 import {RootStackParamList} from '../navigation/types';
-import {AppText, AppButton, AppHeader, AppCard} from '../components';
+import {AppText, AppButton, AppHeader, AppCard, AppIcon} from '../components';
 import {theme} from '../theme';
 import {useTranslation} from '../i18n';
 
@@ -59,9 +59,7 @@ export const NotificationSettingsScreen: React.FC<NotificationSettingsScreenProp
         contentContainerStyle={styles.scrollContent}>
         <View style={styles.content}>
           <View style={styles.iconContainer}>
-            <AppText variant="bold" size="huge" color={theme.colors.primary}>
-              🔔
-            </AppText>
+            <AppIcon name="notifications-outline" size={56} color={theme.colors.primary} />
           </View>
 
           <AppText variant="semiBold" size="xl" align="center" style={styles.title}>

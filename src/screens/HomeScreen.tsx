@@ -476,15 +476,17 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({onLogout}) => {
                           <View style={styles.eventItemMeta}>
                             {formattedDate && (
                               <View style={styles.eventMetaBadge}>
+                                <AppIcon name="calendar-outline" size={14} color={theme.colors.textDark} />
                                 <AppText size="xs" color={theme.colors.textDark} variant="medium">
-                                  📅 {formattedDate}
+                                  {formattedDate}
                                 </AppText>
                               </View>
                             )}
                             {formattedTime && (
                               <View style={styles.eventMetaBadge}>
+                                <AppIcon name="time-outline" size={14} color={theme.colors.textDark} />
                                 <AppText size="xs" color={theme.colors.textDark} variant="medium">
-                                  🕐 {formattedTime}
+                                  {formattedTime}
                                 </AppText>
                               </View>
                             )}
@@ -516,7 +518,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({onLogout}) => {
             </>
           ) : (
             <View style={styles.emptyEventsContainer}>
-              <AppText size="lg">📅</AppText>
+              <AppIcon name="calendar-outline" size={40} color={theme.colors.border} />
               <AppText variant="medium" size="sm" style={styles.emptyEventsText}>
                 {t('home.noEvents')}
               </AppText>
@@ -566,7 +568,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({onLogout}) => {
             </>
           ) : (
             <View style={styles.emptyEventsContainer}>
-              <AppText size="lg">📝</AppText>
+              <AppIcon name="document-text-outline" size={40} color={theme.colors.border} />
               <AppText variant="medium" size="sm" style={styles.emptyEventsText}>
                 {t('home.noActivity')}
               </AppText>
@@ -696,7 +698,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({onLogout}) => {
                 <AppText size="md" color={newTime ? theme.colors.textDark : theme.colors.textLight}>
                   {newTime ? formatTime(newTime) : t('home.selectTime')}
                 </AppText>
-                <AppText size="lg">🕐</AppText>
+                <AppIcon name="time-outline" size={22} color={theme.colors.primary} />
               </TouchableOpacity>
             </View>
 
@@ -913,7 +915,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({onLogout}) => {
                 <AppText size="md" color={eventDate ? theme.colors.textDark : theme.colors.textLight}>
                   {eventDate || t('home.selectDate')}
                 </AppText>
-                <AppText size="lg">📅</AppText>
+                <AppIcon name="calendar-outline" size={22} color={theme.colors.primary} />
               </TouchableOpacity>
             </View>
 
@@ -937,7 +939,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({onLogout}) => {
                 <AppText size="md" color={eventTime ? theme.colors.textDark : theme.colors.textLight}>
                   {eventTime || t('home.selectTime')}
                 </AppText>
-                <AppText size="lg">🕐</AppText>
+                <AppIcon name="time-outline" size={22} color={theme.colors.primary} />
               </TouchableOpacity>
             </View>
 
@@ -1061,6 +1063,9 @@ const styles = StyleSheet.create({
     flexWrap: 'wrap',
   },
   eventMetaBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
     paddingHorizontal: theme.spacing.sm,
     paddingVertical: theme.spacing.xs / 2,
     borderRadius: theme.borderRadius.xs,

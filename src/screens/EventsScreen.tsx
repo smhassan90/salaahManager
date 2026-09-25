@@ -60,13 +60,15 @@ export const EventsScreen: React.FC = () => {
       <View style={styles.eventHeader}>
         <View style={styles.dateTimeContainer}>
           <View style={styles.dateBadge}>
+            <AppIcon name="calendar-outline" size={14} color={theme.colors.primary} />
             <AppText size="xs" color={theme.colors.primary} variant="semiBold">
-              📅 {getEventDateString(item)}
+              {getEventDateString(item)}
             </AppText>
           </View>
           <View style={styles.timeBadge}>
+            <AppIcon name="time-outline" size={14} color={theme.colors.primary} />
             <AppText size="xs" color={theme.colors.primary} variant="semiBold">
-              🕐 {getEventTimeString(item)}
+              {getEventTimeString(item)}
             </AppText>
           </View>
         </View>
@@ -125,7 +127,7 @@ export const EventsScreen: React.FC = () => {
         contentContainerStyle={styles.listContent}
         ListEmptyComponent={
           <View style={styles.emptyContainer}>
-            <AppText size="xxl">📅</AppText>
+            <AppIcon name="calendar-outline" size={48} color={theme.colors.border} />
             <AppText variant="medium" size="md" style={styles.emptyText}>
               No events scheduled yet
             </AppText>
@@ -181,6 +183,9 @@ const styles = StyleSheet.create({
     gap: theme.spacing.sm,
   },
   dateBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
     paddingHorizontal: theme.spacing.sm,
     paddingVertical: theme.spacing.xs,
     borderRadius: theme.borderRadius.sm,
@@ -189,6 +194,9 @@ const styles = StyleSheet.create({
     borderColor: theme.colors.primary,
   },
   timeBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
     paddingHorizontal: theme.spacing.sm,
     paddingVertical: theme.spacing.xs,
     borderRadius: theme.borderRadius.sm,
