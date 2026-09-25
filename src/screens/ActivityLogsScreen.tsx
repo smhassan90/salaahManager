@@ -1,15 +1,14 @@
 import React, {useCallback, useState} from 'react';
 import {View, StyleSheet, FlatList, RefreshControl} from 'react-native';
 import {useFocusEffect, useNavigation} from '@react-navigation/native';
-import Icon from 'react-native-vector-icons/Ionicons';
-import {AppText, AppCard, AppHeader} from '../components';
+import {AppText, AppCard, AppHeader, AppIcon, type IoniconsName} from '../components';
 import {theme} from '../theme';
 import {useApp} from '../context';
 import {ActivityLog} from '../types';
 import {activityLogService, formatRelativeTime} from '../services/api/activityLogService';
 import {useTranslation} from '../i18n';
 
-const actionIcon = (action: string) => {
+const actionIcon = (action: string): IoniconsName => {
   if (action === 'prayer_time_updated') {
     return 'time-outline';
   }
@@ -61,7 +60,7 @@ export const ActivityLogsScreen: React.FC = () => {
     <AppCard padding="medium" shadow="small" style={styles.logCard}>
       <View style={styles.logHeader}>
         <View style={styles.iconBadge}>
-          <Icon name={actionIcon(item.action)} size={18} color={theme.colors.primary} />
+          <AppIcon name={actionIcon(item.action)} size={18} color={theme.colors.primary} />
         </View>
         <View style={styles.logBody}>
           <AppText variant="semiBold" size="md" style={styles.logMessage}>
@@ -81,7 +80,7 @@ export const ActivityLogsScreen: React.FC = () => {
       <AppHeader
         title={t('logs.title')}
         subtitle={defaultMasjid?.name}
-        leftIcon={<Icon name="arrow-back" size={24} color={theme.colors.textWhite} />}
+        leftIcon={<AppIcon name="arrow-back" size={24} color={theme.colors.textWhite} />}
         onLeftPress={() => navigation.goBack()}
       />
       <FlatList

@@ -1,8 +1,7 @@
 import React from 'react';
 import {View, StyleSheet, FlatList, TouchableOpacity, Alert} from 'react-native';
 import {useNavigation} from '@react-navigation/native';
-import Icon from 'react-native-vector-icons/Ionicons';
-import {AppText, AppCard, AppHeader} from '../components';
+import {AppText, AppCard, AppHeader, AppIcon} from '../components';
 import {theme} from '../theme';
 import {useApp} from '../context';
 import {Event} from '../types';
@@ -75,7 +74,7 @@ export const EventsScreen: React.FC = () => {
           onPress={() => handleDeleteEvent(item)}
           style={styles.deleteButton}
           hitSlop={{top: 10, bottom: 10, left: 10, right: 10}}>
-          <Icon name="trash-outline" size={20} color={theme.colors.error} />
+          <AppIcon name="trash-outline" size={20} color={theme.colors.error} />
         </TouchableOpacity>
       </View>
       <AppText variant="semiBold" size="md" style={styles.eventName}>
@@ -94,7 +93,7 @@ export const EventsScreen: React.FC = () => {
       <AppHeader
         title="EVENTS"
         subtitle={defaultMasjid?.name}
-        leftIcon={<Icon name="arrow-back" size={24} color={theme.colors.textWhite} />}
+        leftIcon={<AppIcon name="arrow-back" size={24} color={theme.colors.textWhite} />}
         onLeftPress={() => navigation.goBack()}
       />
       {eventPermissionError && (

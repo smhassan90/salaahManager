@@ -3,6 +3,7 @@ import {View, TouchableOpacity, StyleSheet, ViewStyle} from 'react-native';
 import {SafeAreaView} from 'react-native-safe-area-context';
 import {theme} from '../theme';
 import {AppText} from './AppText';
+import {AppIcon} from './AppIcon';
 
 interface AppHeaderProps {
   title: string;
@@ -37,13 +38,15 @@ export const AppHeader: React.FC<AppHeaderProps> = ({
         <View style={styles.leftSection}>
           {(showBackButton || leftIcon || onLeftPress) && (
             <TouchableOpacity onPress={onLeftPress} style={styles.iconButton}>
-              {typeof leftIcon === 'string' || !leftIcon ? (
+              {typeof leftIcon === 'string' ? (
                 <AppText size="lg" color={theme.colors.textWhite}>
-                  {showBackButton ? '←' : leftIcon || ''}
+                  {leftIcon}
                 </AppText>
-              ) : (
+              ) : leftIcon ? (
                 leftIcon
-              )}
+              ) : showBackButton ? (
+                <AppIcon name="chevron-back" size={26} color={theme.colors.textWhite} />
+              ) : null}
             </TouchableOpacity>
           )}
         </View>
@@ -70,13 +73,15 @@ export const AppHeader: React.FC<AppHeaderProps> = ({
         <View style={styles.rightSection}>
           {(showMenuButton || rightIcon || onRightPress) && (
             <TouchableOpacity onPress={onRightPress} style={styles.iconButton}>
-              {typeof rightIcon === 'string' || !rightIcon ? (
+              {typeof rightIcon === 'string' ? (
                 <AppText size="lg" color={theme.colors.textWhite}>
-                  {showMenuButton ? '☰' : rightIcon || ''}
+                  {rightIcon}
                 </AppText>
-              ) : (
+              ) : rightIcon ? (
                 rightIcon
-              )}
+              ) : showMenuButton ? (
+                <AppIcon name="menu" size={26} color={theme.colors.textWhite} />
+              ) : null}
             </TouchableOpacity>
           )}
         </View>

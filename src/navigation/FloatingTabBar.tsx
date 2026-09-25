@@ -2,7 +2,7 @@ import React, {useEffect, useRef} from 'react';
 import {View, TouchableOpacity, StyleSheet, Animated} from 'react-native';
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
 import {BottomTabBarProps} from '@react-navigation/bottom-tabs';
-import Icon from 'react-native-vector-icons/Ionicons';
+import {AppIcon, type IoniconsName} from '../components';
 import {theme} from '../theme';
 
 export const FloatingTabBar: React.FC<BottomTabBarProps> = ({
@@ -64,7 +64,7 @@ export const FloatingTabBar: React.FC<BottomTabBarProps> = ({
                   size: 22,
                 })
               : (
-                <Icon name={iconName as string} size={22} color={color} />
+                <AppIcon name={(iconName ?? 'ellipse-outline') as IoniconsName} size={22} color={color} />
               );
 
           return (

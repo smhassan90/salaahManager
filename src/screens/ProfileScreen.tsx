@@ -1,7 +1,6 @@
 import React, {useState} from 'react';
 import {View, StyleSheet, ScrollView, Modal, TouchableOpacity, Alert, Linking, Switch, KeyboardAvoidingView, Platform} from 'react-native';
-import Icon from 'react-native-vector-icons/Ionicons';
-import {AppText, AppButton, AppCard, AppHeader, AppTextInput} from '../components';
+import {AppText, AppButton, AppCard, AppHeader, AppTextInput, AppIcon} from '../components';
 import {theme} from '../theme';
 import {openActivityLogs} from '../navigation/navigationRef';
 import {useApp} from '../context';
@@ -295,7 +294,7 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({onLogout}) => {
         <View style={styles.modalOverlay}>
           <View style={styles.logoutModalContent}>
             <View style={styles.logoutIconContainer}>
-              <Icon name="log-out-outline" size={48} color={theme.colors.error} />
+              <AppIcon name="log-out-outline" size={48} color={theme.colors.error} />
             </View>
             
             <AppText variant="semiBold" size="xl" style={styles.logoutModalTitle} align="center">
@@ -336,7 +335,7 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({onLogout}) => {
         <View style={styles.modalOverlay}>
           <View style={styles.deleteModalContent}>
             <View style={styles.deleteIconContainer}>
-              <Icon name="warning-outline" size={48} color={theme.colors.error} />
+              <AppIcon name="warning-outline" size={48} color={theme.colors.error} />
             </View>
             
             <AppText variant="semiBold" size="xl" style={styles.deleteModalTitle} align="center">
@@ -384,7 +383,7 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({onLogout}) => {
               showsVerticalScrollIndicator={false}>
               <View style={styles.changePasswordModalContent}>
                 <View style={styles.changePasswordIconContainer}>
-                  <Icon name="lock-closed-outline" size={48} color={theme.colors.primary} />
+                  <AppIcon name="lock-closed-outline" size={48} color={theme.colors.primary} />
                 </View>
                 
                 <AppText variant="semiBold" size="xl" style={styles.changePasswordModalTitle} align="center">
@@ -456,7 +455,7 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({onLogout}) => {
         <View style={styles.modalOverlay}>
           <View style={styles.notificationModalContent}>
             <View style={styles.notificationIconContainer}>
-              <Icon name="notifications-outline" size={48} color={theme.colors.primary} />
+              <AppIcon name="notifications-outline" size={48} color={theme.colors.primary} />
             </View>
             
             <AppText variant="semiBold" size="xl" style={styles.notificationModalTitle} align="center">
@@ -563,7 +562,7 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({onLogout}) => {
                       </AppText>
                     </View>
                     {currentLanguage === language.code && (
-                      <Icon name="checkmark-circle" size={24} color={theme.colors.primary} />
+                      <AppIcon name="checkmark-circle" size={24} color={theme.colors.primary} />
                     )}
                   </TouchableOpacity>
                 ))}

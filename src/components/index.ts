@@ -3,4 +3,5 @@ export * from './AppButton';
 export * from './AppCard';
 export * from './AppHeader';
 export * from './AppTextInput';
+export * from './AppIcon';
 

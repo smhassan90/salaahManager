@@ -1,6 +1,6 @@
 import React from 'react';
 import {createBottomTabNavigator} from '@react-navigation/bottom-tabs';
-import Icon from 'react-native-vector-icons/Ionicons';
+import {AppIcon} from '../components';
 import {QuestionsScreen, MyMasajidsScreen, ProfileScreen, NotificationsScreen} from '../screens';
 import {HomeStackNavigator} from './HomeStackNavigator';
 import {FloatingTabBar} from './FloatingTabBar';
@@ -36,7 +36,7 @@ export const BottomTabNavigator: React.FC<BottomTabNavigatorProps> = ({onLogout}
         options={{
           tabBarLabel: t('tabs.home'),
           tabBarIcon: ({color, focused}) => (
-            <Icon name={focused ? 'home' : 'home-outline'} size={22} color={color} />
+            <AppIcon name={focused ? 'home' : 'home-outline'} size={22} color={color} />
           ),
         }}
         listeners={({navigation}) => ({
@@ -52,7 +52,7 @@ export const BottomTabNavigator: React.FC<BottomTabNavigatorProps> = ({onLogout}
         options={{
           tabBarLabel: t('tabs.questions'),
           tabBarIcon: ({color, focused}) => (
-            <Icon
+            <AppIcon
               name={focused ? 'help-circle' : 'help-circle-outline'}
               size={22}
               color={color}
@@ -66,7 +66,7 @@ export const BottomTabNavigator: React.FC<BottomTabNavigatorProps> = ({onLogout}
         options={{
           tabBarLabel: t('tabs.myMasajids'),
           tabBarIcon: ({color, focused}) => (
-            <Icon
+            <AppIcon
               name={focused ? 'business' : 'business-outline'}
               size={22}
               color={color}
@@ -80,7 +80,7 @@ export const BottomTabNavigator: React.FC<BottomTabNavigatorProps> = ({onLogout}
         options={{
           tabBarLabel: t('tabs.notifications'),
           tabBarIcon: ({color, focused}) => (
-            <Icon
+            <AppIcon
               name={focused ? 'notifications' : 'notifications-outline'}
               size={22}
               color={color}
@@ -93,7 +93,7 @@ export const BottomTabNavigator: React.FC<BottomTabNavigatorProps> = ({onLogout}
         options={{
           tabBarLabel: t('tabs.profile'),
           tabBarIcon: ({color, focused}) => (
-            <Icon name={focused ? 'person' : 'person-outline'} size={22} color={color} />
+            <AppIcon name={focused ? 'person' : 'person-outline'} size={22} color={color} />
           ),
         }}>
         {() => <ProfileScreen onLogout={onLogout} />}

@@ -2,8 +2,7 @@ import React from 'react';
 import {View, StyleSheet, ScrollView, TouchableOpacity, Alert} from 'react-native';
 import {StackNavigationProp} from '@react-navigation/stack';
 import {RootStackParamList} from '../navigation/types';
-import Icon from 'react-native-vector-icons/Ionicons';
-import {AppText, AppHeader} from '../components';
+import {AppText, AppHeader, AppIcon} from '../components';
 import {theme} from '../theme';
 import {useApp} from '../context';
 import {useTranslation, supportedLanguages} from '../i18n';
@@ -90,7 +89,7 @@ export const LanguageSettingsScreen: React.FC<LanguageSettingsScreenProps> = ({n
                   </AppText>
                 </View>
                 {currentLanguage === language.code && (
-                  <Icon name="checkmark-circle" size={24} color={theme.colors.primary} />
+                  <AppIcon name="checkmark-circle" size={24} color={theme.colors.primary} />
                 )}
               </TouchableOpacity>
             ))}

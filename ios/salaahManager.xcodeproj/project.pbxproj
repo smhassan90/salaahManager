@@ -12,6 +12,7 @@
 		761780ED2CA45674006654EE /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 761780EC2CA45674006654EE /* AppDelegate.swift */; };
 		81AB9BB82411601600AC10FF /* LaunchScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 81AB9BB72411601600AC10FF /* LaunchScreen.storyboard */; };
 		A1B2C3D41E5F678901234567 /* GoogleService-Info.plist in Resources */ = {isa = PBXBuildFile; fileRef = A1B2C3D41E5F678901234568 /* GoogleService-Info.plist */; };
+		B2C3D4E5F6789012345678 /* Ionicons.ttf in Resources */ = {isa = PBXBuildFile; fileRef = B2C3D4E5F6789012345679 /* Ionicons.ttf */; };
 		EB2815CC71EB7C8A500659AE /* Pods_salaahManager.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 060BCD32F0F3B10F2AD30B5C /* Pods_salaahManager.framework */; };
 /* End PBXBuildFile section */
 
@@ -26,6 +27,7 @@
 		761780EC2CA45674006654EE /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = AppDelegate.swift; path = salaahManager/AppDelegate.swift; sourceTree = "<group>"; };
 		81AB9BB72411601600AC10FF /* LaunchScreen.storyboard */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = file.storyboard; name = LaunchScreen.storyboard; path = salaahManager/LaunchScreen.storyboard; sourceTree = "<group>"; };
 		A1B2C3D41E5F678901234568 /* GoogleService-Info.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; name = "GoogleService-Info.plist"; path = "salaahManager/GoogleService-Info.plist"; sourceTree = "<group>"; };
+		B2C3D4E5F6789012345679 /* Ionicons.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; name = Ionicons.ttf; path = salaahManager/Fonts/Ionicons.ttf; sourceTree = "<group>"; };
 		ED297162215061F000B7C4FE /* JavaScriptCore.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = JavaScriptCore.framework; path = System/Library/Frameworks/JavaScriptCore.framework; sourceTree = SDKROOT; };
 /* End PBXFileReference section */
 
@@ -49,6 +51,7 @@
 				13B07FB61A68108700A75B9A /* Info.plist */,
 				81AB9BB72411601600AC10FF /* LaunchScreen.storyboard */,
 				A1B2C3D41E5F678901234568 /* GoogleService-Info.plist */,
+				B2C3D4E5F6789012345679 /* Ionicons.ttf */,
 				13B07FB81A68108700A75B9A /* PrivacyInfo.xcprivacy */,
 			);
 			name = salaahManager;
@@ -165,6 +168,7 @@
 				81AB9BB82411601600AC10FF /* LaunchScreen.storyboard in Resources */,
 				13B07FBF1A68108700A75B9A /* Images.xcassets in Resources */,
 				A1B2C3D41E5F678901234567 /* GoogleService-Info.plist in Resources */,
+				B2C3D4E5F6789012345678 /* Ionicons.ttf in Resources */,
 				40D7D594C55D993618A647DF /* PrivacyInfo.xcprivacy in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;

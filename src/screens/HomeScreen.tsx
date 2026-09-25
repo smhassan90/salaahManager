@@ -4,7 +4,7 @@ import {useFocusEffect, useNavigation} from '@react-navigation/native';
 import {StackNavigationProp} from '@react-navigation/stack';
 import {BottomTabNavigationProp} from '@react-navigation/bottom-tabs';
 import DateTimePicker from '@react-native-community/datetimepicker';
-import {AppText, AppButton, AppCard, AppHeader, AppTextInput} from '../components';
+import {AppText, AppButton, AppCard, AppHeader, AppTextInput, AppIcon} from '../components';
 import {theme} from '../theme';
 import {useApp} from '../context';
 import {HomeStackParamList} from '../navigation/HomeStackNavigator';
@@ -608,8 +608,9 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({onLogout}) => {
               <AppCard padding="medium" shadow="none">
                 {pendingQuestions > 0 ? (
                   <View style={styles.fullWidthContent}>
+                    <AppIcon name="help-circle-outline" size={22} color={theme.colors.primary} />
                     <AppText variant="semiBold" size="md" style={styles.actionTitleCenter}>
-                      ❓ {t('home.questions')}
+                      {t('home.questions')}
                     </AppText>
                     <View style={styles.inlineBadge}>
                       <AppText size="xs" color={theme.colors.textWhite} variant="semiBold">
@@ -618,9 +619,12 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({onLogout}) => {
                     </View>
                   </View>
                 ) : (
-                  <AppText variant="semiBold" size="md" style={styles.actionTitle}>
-                    ❓ {t('home.questions')}
-                  </AppText>
+                  <View style={styles.actionTitleRow}>
+                    <AppIcon name="help-circle-outline" size={20} color={theme.colors.primary} />
+                    <AppText variant="semiBold" size="md" style={styles.actionTitle}>
+                      {t('home.questions')}
+                    </AppText>
+                  </View>
                 )}
               </AppCard>
             </View>
@@ -639,8 +643,9 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({onLogout}) => {
               eventPressed && styles.primaryActionCardPressed
             ]}>
               <View style={styles.primaryActionContent}>
+                <AppIcon name="calendar-outline" size={20} color={theme.colors.textWhite} />
                 <AppText variant="semiBold" size="md" color={theme.colors.textWhite}>
-                  📅 {t('home.createEvent')}
+                  {t('home.createEvent')}
                 </AppText>
               </View>
             </View>
@@ -659,8 +664,9 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({onLogout}) => {
               notificationPressed && styles.primaryActionCardPressed
             ]}>
               <View style={styles.primaryActionContent}>
+                <AppIcon name="notifications-outline" size={20} color={theme.colors.textWhite} />
                 <AppText variant="semiBold" size="md" color={theme.colors.textWhite}>
-                  🔔 {t('home.sendNotification')}
+                  {t('home.sendNotification')}
                 </AppText>
               </View>
             </View>
@@ -1228,8 +1234,16 @@ const styles = StyleSheet.create({
   },
   primaryActionContent: {
     padding: theme.spacing.md,
+    flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
+    gap: theme.spacing.sm,
+  },
+  actionTitleRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: theme.spacing.sm,
   },
   actionTitle: {
     textAlign: 'center',

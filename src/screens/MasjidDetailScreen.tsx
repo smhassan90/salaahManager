@@ -3,7 +3,7 @@ import {View, StyleSheet, ScrollView} from 'react-native';
 import {useNavigation, useRoute, RouteProp} from '@react-navigation/native';
 import {StackNavigationProp} from '@react-navigation/stack';
 import {RootStackParamList} from '../navigation/types';
-import {AppText, AppButton, AppCard, AppHeader} from '../components';
+import {AppText, AppButton, AppCard, AppHeader, AppIcon} from '../components';
 import {theme} from '../theme';
 import {useApp} from '../context';
 import {prayerTimeService} from '../services/api';
@@ -33,7 +33,7 @@ export const MasjidDetailScreen: React.FC = () => {
       <View style={styles.container}>
         <AppHeader
           title="Masjid Not Found"
-          showBackButton
+          leftIcon={<AppIcon name="chevron-back" size={26} color={theme.colors.textWhite} />}
           onLeftPress={() => navigation.goBack()}
         />
       </View>
@@ -44,16 +44,19 @@ export const MasjidDetailScreen: React.FC = () => {
     <View style={styles.container}>
       <AppHeader
         title={masjid.name}
-        showBackButton
+        leftIcon={<AppIcon name="chevron-back" size={26} color={theme.colors.textWhite} />}
         onLeftPress={() => navigation.goBack()}
       />
 
       <ScrollView style={styles.scrollView} contentContainerStyle={styles.scrollContent}>
         {/* Prayer Times Section */}
         <AppCard padding="medium" shadow="small" style={styles.sectionCard}>
-          <AppText variant="semiBold" size="lg" style={styles.sectionTitle}>
-            📿 Prayer Times
-          </AppText>
+          <View style={styles.sectionTitleRow}>
+            <AppIcon name="time-outline" size={22} color={theme.colors.primary} />
+            <AppText variant="semiBold" size="lg" style={styles.sectionTitle}>
+              Prayer Times
+            </AppText>
+          </View>
           {masjidPrayerTimes.map(prayer => (
             <View key={prayer.name} style={styles.prayerRow}>
               <AppText variant="medium" size="md">
@@ -69,9 +72,12 @@ export const MasjidDetailScreen: React.FC = () => {
         {/* Questions Section */}
         <AppCard padding="medium" shadow="small" style={styles.sectionCard}>
           <View style={styles.sectionHeader}>
-            <AppText variant="semiBold" size="lg">
-              ❓ Questions
-            </AppText>
+            <View style={styles.sectionTitleRow}>
+              <AppIcon name="help-circle-outline" size={22} color={theme.colors.primary} />
+              <AppText variant="semiBold" size="lg">
+                Questions
+              </AppText>
+            </View>
             {newQuestionsCount > 0 && (
               <View style={styles.badge}>
                 <AppText
@@ -94,9 +100,12 @@ export const MasjidDetailScreen: React.FC = () => {
 
         {/* Notifications Section */}
         <AppCard padding="medium" shadow="small" style={styles.sectionCard}>
-          <AppText variant="semiBold" size="lg" style={styles.sectionTitle}>
-            🔔 Notifications
-          </AppText>
+          <View style={styles.sectionTitleRow}>
+            <AppIcon name="notifications-outline" size={22} color={theme.colors.primary} />
+            <AppText variant="semiBold" size="lg" style={styles.sectionTitle}>
+              Notifications
+            </AppText>
+          </View>
           <AppButton
             title="Send Notification"
             onPress={() => navigation.navigate('SendNotification', {masjidId})}
@@ -107,9 +116,12 @@ export const MasjidDetailScreen: React.FC = () => {
 
         {/* Events Section */}
         <AppCard padding="medium" shadow="small" style={styles.sectionCard}>
-          <AppText variant="semiBold" size="lg" style={styles.sectionTitle}>
-            📅 Events
-          </AppText>
+          <View style={styles.sectionTitleRow}>
+            <AppIcon name="calendar-outline" size={22} color={theme.colors.primary} />
+            <AppText variant="semiBold" size="lg" style={styles.sectionTitle}>
+              Events
+            </AppText>
+          </View>
           <AppButton
             title="Add Event"
             onPress={() => navigation.navigate('AddEvent', {masjidId})}
@@ -137,6 +149,12 @@ const styles = StyleSheet.create({
     marginBottom: theme.spacing.md,
   },
   sectionTitle: {
+    marginBottom: 0,
+  },
+  sectionTitleRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: theme.spacing.sm,
     marginBottom: theme.spacing.md,
   },
   sectionHeader: {
@@ -144,6 +162,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
     marginBottom: theme.spacing.md,
+    gap: theme.spacing.sm,
   },
   badge: {
     backgroundColor: theme.colors.error,
