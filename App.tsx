@@ -5,7 +5,7 @@
  */
 
 import React, {useState, useEffect} from 'react';
-import {StatusBar, Alert, Platform} from 'react-native';
+import {StatusBar, Alert} from 'react-native';
 import {NavigationContainer} from '@react-navigation/native';
 import {SafeAreaProvider} from 'react-native-safe-area-context';
 import messaging from '@react-native-firebase/messaging';
@@ -16,9 +16,7 @@ import {navigationRef} from './src/navigation/navigationRef';
 import './src/i18n/config'; // Initialize i18n
 import Ionicons from 'react-native-vector-icons/Ionicons';
 
-if (Platform.OS === 'android') {
-  Ionicons.loadFont().catch(() => {});
-}
+Ionicons.loadFont().catch(() => {});
 
 type Screen = 'splash' | 'login' | 'home';
 
