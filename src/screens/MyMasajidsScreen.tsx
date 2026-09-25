@@ -1,6 +1,6 @@
 import React, {useState} from 'react';
 import {View, StyleSheet, FlatList, TouchableOpacity} from 'react-native';
-import {AppText, AppCard, AppHeader} from '../components';
+import {AppText, AppCard, AppHeader, AppIcon} from '../components';
 import {theme} from '../theme';
 import {useApp} from '../context';
 import {Masjid} from '../types';
@@ -58,9 +58,12 @@ export const MyMasajidsScreen: React.FC = () => {
               {item.name}
             </AppText>
             {!!placeLabel && (
-              <AppText size="sm" color={theme.colors.textDark} style={styles.location}>
-                📍 {placeLabel}
-              </AppText>
+              <View style={styles.locationRow}>
+                <AppIcon name="location-outline" size={16} color={theme.colors.textDark} />
+                <AppText size="sm" color={theme.colors.textDark} style={styles.location}>
+                  {placeLabel}
+                </AppText>
+              </View>
             )}
           </View>
           <View style={[styles.radio, item.isDefault && styles.radioActive]}>
@@ -135,8 +138,14 @@ const styles = StyleSheet.create({
     flex: 1,
     paddingRight: theme.spacing.sm,
   },
-  location: {
+  locationRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
     marginTop: theme.spacing.xs,
+  },
+  location: {
+    flex: 1,
     lineHeight: 20,
   },
   radio: {

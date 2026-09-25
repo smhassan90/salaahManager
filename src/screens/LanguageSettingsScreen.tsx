@@ -51,9 +51,7 @@ export const LanguageSettingsScreen: React.FC<LanguageSettingsScreenProps> = ({n
         contentContainerStyle={styles.scrollContent}>
         <View style={styles.content}>
           <View style={styles.iconContainer}>
-            <AppText variant="bold" size="huge" color={theme.colors.primary}>
-              🌐
-            </AppText>
+            <AppIcon name="globe-outline" size={64} color={theme.colors.primary} />
           </View>
 
           <AppText variant="semiBold" size="xl" align="center" style={styles.title}>

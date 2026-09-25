@@ -1,6 +1,6 @@
 import React, {useEffect} from 'react';
 import {View, StyleSheet} from 'react-native';
-import {AppText} from '../components';
+import {AppText, AppIcon} from '../components';
 import {theme} from '../theme';
 import {useApp} from '../context';
 
@@ -21,9 +21,7 @@ export const SplashScreen: React.FC<SplashScreenProps> = ({onFinish}) => {
 
   return (
     <View style={styles.container}>
-      <AppText variant="bold" size="huge" color={theme.colors.primary}>
-        🕌
-      </AppText>
+      <AppIcon name="business-outline" size={72} color={theme.colors.primary} />
       <AppText
         variant="bold"
         size="xxxl"

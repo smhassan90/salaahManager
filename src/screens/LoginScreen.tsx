@@ -1,6 +1,6 @@
 import React, {useState} from 'react';
 import {View, StyleSheet, ScrollView, KeyboardAvoidingView, Platform, TouchableOpacity} from 'react-native';
-import {AppText, AppButton, AppTextInput, AppHeader} from '../components';
+import {AppText, AppButton, AppTextInput, AppHeader, AppIcon} from '../components';
 import {theme} from '../theme';
 import {useApp} from '../context';
 
@@ -44,9 +44,7 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({onLoginSuccess}) => {
         style={styles.scrollView}
         contentContainerStyle={styles.scrollContent}>
         <View style={styles.logoContainer}>
-          <AppText variant="bold" size="huge" color={theme.colors.primary}>
-            🕌
-          </AppText>
+          <AppIcon name="business-outline" size={64} color={theme.colors.primary} />
           <AppText
             variant="bold"
             size="xxl"

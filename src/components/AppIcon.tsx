@@ -1,30 +1,27 @@
 import React from 'react';
-import {StyleProp, TextStyle} from 'react-native';
-import Icon from 'react-native-vector-icons/Ionicons';
-
-type IoniconsName = React.ComponentProps<typeof Icon>['name'];
+import {StyleProp, ViewStyle} from 'react-native';
+import {iconMap, type IconName} from '../assets/icons';
 
 interface AppIconProps {
-  name: IoniconsName;
+  name: IconName;
   size?: number;
   color?: string;
-  style?: StyleProp<TextStyle>;
+  style?: StyleProp<ViewStyle>;
 }
 
-/** Ionicons with explicit font family so glyphs are not overridden by app text styles. */
+/** Renders SVG icons from src/assets/icons (no custom font required on iOS). */
 export const AppIcon: React.FC<AppIconProps> = ({
   name,
   size = 22,
   color = '#000',
   style,
-}) => (
-  <Icon
-    name={name}
-    size={size}
-    color={color}
-    allowFontScaling={false}
-    style={[{fontFamily: 'Ionicons'}, style]}
-  />
-);
+}) => {
+  const IconComponent = iconMap[name] ?? iconMap['ellipse-outline'];
+  return (
+    <IconComponent width={size} height={size} color={color} style={style} />
+  );
+};
 
-export type {IoniconsName};
+export type {IconName};
+/** @deprecated Use IconName — kept for existing imports */
+export type IoniconsName = IconName;

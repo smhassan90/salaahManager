@@ -1,14 +1,14 @@
 import React, {useCallback, useState} from 'react';
 import {View, StyleSheet, FlatList, RefreshControl} from 'react-native';
 import {useFocusEffect, useNavigation} from '@react-navigation/native';
-import {AppText, AppCard, AppHeader, AppIcon, type IoniconsName} from '../components';
+import {AppText, AppCard, AppHeader, AppIcon, type IconName} from '../components';
 import {theme} from '../theme';
 import {useApp} from '../context';
 import {ActivityLog} from '../types';
 import {activityLogService, formatRelativeTime} from '../services/api/activityLogService';
 import {useTranslation} from '../i18n';
 
-const actionIcon = (action: string): IoniconsName => {
+const actionIcon = (action: string): IconName => {
   if (action === 'prayer_time_updated') {
     return 'time-outline';
   }

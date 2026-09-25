@@ -2,7 +2,7 @@ import React from 'react';
 import {View, StyleSheet, ScrollView, TouchableOpacity, Alert, Linking} from 'react-native';
 import {StackNavigationProp} from '@react-navigation/stack';
 import {RootStackParamList} from '../navigation/types';
-import {AppText, AppHeader, AppButton, AppCard} from '../components';
+import {AppText, AppHeader, AppButton, AppCard, AppIcon} from '../components';
 import {theme} from '../theme';
 import {useTranslation} from '../i18n';
 
@@ -69,9 +69,7 @@ export const AboutScreen: React.FC<AboutScreenProps> = ({navigation}) => {
         contentContainerStyle={styles.scrollContent}>
         <View style={styles.content}>
           <View style={styles.iconContainer}>
-            <AppText variant="bold" size="huge" color={theme.colors.primary}>
-              🕌
-            </AppText>
+            <AppIcon name="business-outline" size={64} color={theme.colors.primary} />
           </View>
 
           <AppText variant="semiBold" size="xl" align="center" style={styles.title}>

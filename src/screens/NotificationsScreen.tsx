@@ -1,7 +1,7 @@
 import React, {useCallback} from 'react';
 import {View, StyleSheet, FlatList} from 'react-native';
 import {useFocusEffect} from '@react-navigation/native';
-import {AppText, AppCard, AppHeader} from '../components';
+import {AppText, AppCard, AppHeader, AppIcon} from '../components';
 import {theme} from '../theme';
 import {useApp} from '../context';
 import {Notification} from '../types';
@@ -88,7 +88,7 @@ export const NotificationsScreen: React.FC = () => {
         contentContainerStyle={styles.listContent}
         ListEmptyComponent={
           <View style={styles.emptyContainer}>
-            <AppText size="xxl">📭</AppText>
+            <AppIcon name="mail-open-outline" size={48} color={theme.colors.border} />
             <AppText variant="medium" size="md" style={styles.emptyText}>
               {t('notifications.noNotifications')}
             </AppText>
