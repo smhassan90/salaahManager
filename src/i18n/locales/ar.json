@@ -37,7 +37,7 @@
     "title": "الرئيسية",
     "defaultMasjid": "المسجد الافتراضي",
     "noDefaultMasjid": "لا يوجد مسجد افتراضي",
-    "welcome": "مرحباً، {{name}}! 👋",
+    "welcome": "مرحباً، {{name}}!",
     "welcomeSubtitle": "إدارة أوقات الصلاة وأنشطة مسجدك",
     "imamDashboard": "لوحة تحكم الإمام",
     "prayerTimes": "أوقات الصلاة",

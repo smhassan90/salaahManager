@@ -39,7 +39,7 @@
     "title": "HOME",
     "defaultMasjid": "Default Masjid",
     "noDefaultMasjid": "No Default Masjid",
-    "welcome": "Welcome, {{name}}! 👋",
+    "welcome": "Welcome, {{name}}!",
     "welcomeSubtitle": "Manage your masjid prayer times and activities",
     "imamDashboard": "IMAM DASHBOARD",
     "prayerTimes": "PRAYER TIMES",

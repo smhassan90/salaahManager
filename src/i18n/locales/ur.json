@@ -37,7 +37,7 @@
     "title": "ہوم",
     "defaultMasjid": "ڈیفالٹ مسجد",
     "noDefaultMasjid": "کوئی ڈیفالٹ مسجد نہیں",
-    "welcome": "خوش آمدید، {{name}}! 👋",
+    "welcome": "خوش آمدید، {{name}}!",
     "welcomeSubtitle": "اپنی مسجد کی نماز کے اوقات اور سرگرمیوں کا انتظام کریں",
     "imamDashboard": "امام ڈیش بورڈ",
     "prayerTimes": "نماز کے اوقات",
