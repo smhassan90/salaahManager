@@ -97,7 +97,7 @@ export const ActivityLogsScreen: React.FC = () => {
         }
         ListEmptyComponent={
           <View style={styles.emptyContainer}>
-            <AppText size="xxl">📝</AppText>
+            <AppIcon name="document-text-outline" size={48} color={theme.colors.border} />
             <AppText variant="medium" size="md" style={styles.emptyText}>
               {t('logs.empty')}
             </AppText>
