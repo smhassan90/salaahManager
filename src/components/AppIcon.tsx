@@ -23,14 +23,7 @@ export const AppIcon: React.FC<AppIconProps> = ({
     size={size}
     color={color}
     allowFontScaling={false}
-    style={[
-      {
-        fontFamily: Icon.getFontFamily(),
-        fontWeight: 'normal',
-        fontStyle: 'normal',
-      },
-      style,
-    ]}
+    style={[{fontFamily: 'Ionicons'}, style]}
   />
 );
 
