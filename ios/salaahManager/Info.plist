@@ -43,7 +43,7 @@
 	<string>LaunchScreen</string>
 	<key>UIAppFonts</key>
 	<array>
-		<string>Ionicons.ttf</string>
+		<string>Fonts/Ionicons.ttf</string>
 	</array>
 	<key>UIRequiredDeviceCapabilities</key>
 	<array>
